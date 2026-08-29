@@ -1,0 +1,16 @@
+[
+  {
+    "timestamp": "2025-06-01T00:00:10Z",
+    "severity": "critical",
+    "source": "UptimeRobot",
+    "title": "api.example.com DOWN",
+    "description": "SSL handshake failure. Site unreachable via HTTPS."
+  },
+  {
+    "timestamp": "2025-06-01T00:46:00Z",
+    "severity": "info",
+    "source": "UptimeRobot",
+    "title": "api.example.com UP",
+    "description": "Site responding normally."
+  }
+]

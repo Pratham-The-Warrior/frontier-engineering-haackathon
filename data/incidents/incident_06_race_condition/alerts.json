@@ -1,0 +1,16 @@
+[
+  {
+    "timestamp": "2025-07-20T11:06:00Z",
+    "severity": "critical",
+    "source": "Internal",
+    "title": "Duplicate Payment Charges",
+    "description": "Multiple orders charged twice. Financial impact detected."
+  },
+  {
+    "timestamp": "2025-07-20T11:16:30Z",
+    "severity": "info",
+    "source": "Internal",
+    "title": "Duplicate Charges Stopped",
+    "description": "Database constraint preventing further duplicates. Refund process initiated."
+  }
+]

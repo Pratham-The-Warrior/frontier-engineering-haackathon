@@ -1,0 +1,45 @@
+{
+  "root_cause": "The circuit breaker library was upgraded from v1.8 to v2.0 with a breaking configuration change. The v2.0 library required a new method to register the OPEN state fallback handler, but the existing config only adapted the constructor. As a result, when inventory-service became slow and the circuit opened, requests were not blocked — they continued to be sent, exhausting the payment-service thread pool and cascading to checkout and notification services.",
+  "root_cause_category": "code_bug",
+  "contributing_factors": [
+    "Circuit breaker v2.0 had a breaking change in how OPEN state handlers are registered — poorly documented by the library",
+    "Unit tests verified the CLOSED→OPEN transition but not that requests were actually blocked in OPEN state",
+    "No integration test that simulated upstream failure and verified circuit breaker behavior end-to-end",
+    "inventory-service had transient DB slowness that triggered the cascade — the original issue was minor but amplified by the broken circuit breaker",
+    "Thread pool had no timeout on pending requests, allowing unbounded accumulation"
+  ],
+  "key_timeline_events": [
+    {
+      "timestamp": "2025-05-10T09:00:00Z",
+      "description": "Deploy v3.2.0 with upgraded circuit breaker library"
+    },
+    {
+      "timestamp": "2025-05-10T09:30:00Z",
+      "description": "inventory-service starts experiencing DB slowness"
+    },
+    {
+      "timestamp": "2025-05-10T09:38:00Z",
+      "description": "Circuit breaker opens but fails to block requests — thread pool exhaustion"
+    },
+    {
+      "timestamp": "2025-05-10T09:40:00Z",
+      "description": "Cascade: checkout-service and notification-service go down"
+    },
+    {
+      "timestamp": "2025-05-10T09:44:00Z",
+      "description": "Root cause identified — broken circuit breaker config"
+    },
+    {
+      "timestamp": "2025-05-10T09:58:00Z",
+      "description": "Rollback complete — services recovering"
+    },
+    {
+      "timestamp": "2025-05-10T10:05:00Z",
+      "description": "Full recovery"
+    }
+  ],
+  "severity": "SEV1",
+  "impact_summary": "22 minutes of complete checkout outage. Payment, checkout, and notification services all degraded. Estimated 3,000-5,000 failed checkout attempts with direct revenue impact.",
+  "resolution": "Rolled back payment-service to v3.1.9 with circuit breaker v1.8. inventory-service DB issue resolved independently.",
+  "duration_minutes": 27
+}

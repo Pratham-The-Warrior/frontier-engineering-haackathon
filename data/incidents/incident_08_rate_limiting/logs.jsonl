@@ -1,0 +1,68 @@
+[
+  {
+    "timestamp": "2025-08-20T10:00:00Z",
+    "level": "INFO",
+    "service": "marketing-service",
+    "message": "Email campaign 'Summer Promo' launched — 50,000 recipients",
+    "metadata": {
+      "campaign_id": "camp-301"
+    }
+  },
+  {
+    "timestamp": "2025-08-20T10:05:00Z",
+    "level": "WARN",
+    "service": "email-service",
+    "message": "SendGrid API rate limit warning: 80% of quota used",
+    "metadata": {
+      "quota_used_pct": 80
+    }
+  },
+  {
+    "timestamp": "2025-08-20T10:08:00Z",
+    "level": "ERROR",
+    "service": "email-service",
+    "message": "SendGrid API 429 Too Many Requests",
+    "metadata": {
+      "retry_after_seconds": 60
+    }
+  },
+  {
+    "timestamp": "2025-08-20T10:08:30Z",
+    "level": "ERROR",
+    "service": "email-service",
+    "message": "Email queue growing — 12,000 emails pending",
+    "metadata": {
+      "queue_size": 12000
+    }
+  },
+  {
+    "timestamp": "2025-08-20T10:10:00Z",
+    "level": "ERROR",
+    "service": "notification-service",
+    "message": "Unable to send transactional emails (password resets, order confirmations) — email-service queue saturated",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-08-20T10:12:00Z",
+    "level": "WARN",
+    "service": "email-service",
+    "message": "Memory usage high due to queued messages: 1.8GB",
+    "metadata": {
+      "queue_size": 25000
+    }
+  },
+  {
+    "timestamp": "2025-08-20T10:30:00Z",
+    "level": "INFO",
+    "service": "email-service",
+    "message": "Campaign emails deprioritized. Transactional emails given dedicated queue.",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-08-20T10:35:00Z",
+    "level": "INFO",
+    "service": "email-service",
+    "message": "Transactional emails flowing normally. Campaign emails throttled to 100/min.",
+    "metadata": {}
+  }
+]

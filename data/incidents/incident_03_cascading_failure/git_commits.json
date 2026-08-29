@@ -1,0 +1,34 @@
+[
+  {
+    "sha": "x1y2z3a",
+    "timestamp": "2025-05-09T16:00:00Z",
+    "author": "David Park",
+    "message": "chore: upgrade circuit-breaker library from v1.8 to v2.0",
+    "files_changed": [
+      "requirements.txt",
+      "src/resilience/circuit_breaker.py"
+    ],
+    "diff_summary": "Updated circuit-breaker dependency to v2.0. Config format changed from dict-based to builder pattern. Adapted constructor but did not update the OPEN state fallback handler registration (breaking change in v2.0)."
+  },
+  {
+    "sha": "b4c5d6e",
+    "timestamp": "2025-05-09T17:00:00Z",
+    "author": "David Park",
+    "message": "test: update circuit breaker unit tests",
+    "files_changed": [
+      "tests/test_circuit_breaker.py"
+    ],
+    "diff_summary": "Updated tests for new constructor. Tests check CLOSED→OPEN transition but don't verify that requests are actually blocked in OPEN state."
+  },
+  {
+    "sha": "f7g8h9i",
+    "timestamp": "2025-05-10T09:55:00Z",
+    "author": "Alex Rivera",
+    "message": "revert: rollback to circuit-breaker v1.8",
+    "files_changed": [
+      "requirements.txt",
+      "src/resilience/circuit_breaker.py"
+    ],
+    "diff_summary": "Reverted circuit breaker library to v1.8 and restored original config."
+  }
+]

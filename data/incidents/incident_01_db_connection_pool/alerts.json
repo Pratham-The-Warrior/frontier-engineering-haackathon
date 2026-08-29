@@ -1,0 +1,30 @@
+[
+  {
+    "timestamp": "2025-03-15T14:28:30Z",
+    "severity": "warning",
+    "source": "Datadog",
+    "title": "DB Connection Pool > 90%",
+    "description": "user-service database connection pool utilization exceeded 90% threshold."
+  },
+  {
+    "timestamp": "2025-03-15T14:30:15Z",
+    "severity": "critical",
+    "source": "PagerDuty",
+    "title": "user-service Error Rate > 5%",
+    "description": "Error rate for user-service has exceeded 5% for 2 consecutive minutes. Current: 12%."
+  },
+  {
+    "timestamp": "2025-03-15T14:31:45Z",
+    "severity": "critical",
+    "source": "PagerDuty",
+    "title": "order-service Degraded",
+    "description": "order-service reporting upstream failures. Cascading impact detected."
+  },
+  {
+    "timestamp": "2025-03-15T14:48:00Z",
+    "severity": "info",
+    "source": "PagerDuty",
+    "title": "user-service Recovered",
+    "description": "Error rate returned to normal levels."
+  }
+]

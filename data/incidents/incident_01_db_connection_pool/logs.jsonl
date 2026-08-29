@@ -1,0 +1,151 @@
+[
+  {
+    "timestamp": "2025-03-15T14:00:12Z",
+    "level": "INFO",
+    "service": "api-gateway",
+    "message": "Deploy v2.14.0 started",
+    "metadata": {
+      "deploy_id": "dep-8821"
+    }
+  },
+  {
+    "timestamp": "2025-03-15T14:02:45Z",
+    "level": "INFO",
+    "service": "api-gateway",
+    "message": "Deploy v2.14.0 completed successfully",
+    "metadata": {
+      "deploy_id": "dep-8821"
+    }
+  },
+  {
+    "timestamp": "2025-03-15T14:15:33Z",
+    "level": "WARN",
+    "service": "user-service",
+    "message": "Database connection pool usage at 75%",
+    "metadata": {
+      "pool_size": 50,
+      "active": 38
+    }
+  },
+  {
+    "timestamp": "2025-03-15T14:22:18Z",
+    "level": "WARN",
+    "service": "user-service",
+    "message": "Database connection pool usage at 85%",
+    "metadata": {
+      "pool_size": 50,
+      "active": 43
+    }
+  },
+  {
+    "timestamp": "2025-03-15T14:28:05Z",
+    "level": "ERROR",
+    "service": "user-service",
+    "message": "Database connection pool usage at 95%",
+    "metadata": {
+      "pool_size": 50,
+      "active": 48
+    }
+  },
+  {
+    "timestamp": "2025-03-15T14:30:12Z",
+    "level": "ERROR",
+    "service": "user-service",
+    "message": "Failed to acquire database connection: pool exhausted",
+    "metadata": {
+      "wait_time_ms": 30000
+    }
+  },
+  {
+    "timestamp": "2025-03-15T14:30:14Z",
+    "level": "ERROR",
+    "service": "api-gateway",
+    "message": "HTTP 503 returned to client",
+    "metadata": {
+      "endpoint": "/api/users",
+      "request_id": "req-a1b2c3"
+    }
+  },
+  {
+    "timestamp": "2025-03-15T14:30:45Z",
+    "level": "ERROR",
+    "service": "user-service",
+    "message": "Failed to acquire database connection: pool exhausted",
+    "metadata": {
+      "wait_time_ms": 30000
+    }
+  },
+  {
+    "timestamp": "2025-03-15T14:31:02Z",
+    "level": "ERROR",
+    "service": "order-service",
+    "message": "Upstream dependency user-service returning 503",
+    "metadata": {
+      "retry_count": 3
+    }
+  },
+  {
+    "timestamp": "2025-03-15T14:31:15Z",
+    "level": "ERROR",
+    "service": "api-gateway",
+    "message": "HTTP 503 returned to client",
+    "metadata": {
+      "endpoint": "/api/orders",
+      "request_id": "req-d4e5f6"
+    }
+  },
+  {
+    "timestamp": "2025-03-15T14:31:30Z",
+    "level": "FATAL",
+    "service": "user-service",
+    "message": "Connection pool completely exhausted. All 50 connections in use, 127 requests waiting.",
+    "metadata": {
+      "pool_size": 50,
+      "waiting": 127
+    }
+  },
+  {
+    "timestamp": "2025-03-15T14:32:00Z",
+    "level": "ERROR",
+    "service": "user-service",
+    "message": "Database query timeout after 30s",
+    "metadata": {
+      "query": "SELECT * FROM users WHERE ...",
+      "duration_ms": 30000
+    }
+  },
+  {
+    "timestamp": "2025-03-15T14:33:10Z",
+    "level": "WARN",
+    "service": "postgres",
+    "message": "High number of idle connections detected",
+    "metadata": {
+      "idle_connections": 42,
+      "active_connections": 8
+    }
+  },
+  {
+    "timestamp": "2025-03-15T14:45:00Z",
+    "level": "INFO",
+    "service": "user-service",
+    "message": "Configuration hotfix applied: connection_timeout=5s, idle_timeout=60s",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-03-15T14:47:30Z",
+    "level": "INFO",
+    "service": "user-service",
+    "message": "Database connection pool usage normalized at 30%",
+    "metadata": {
+      "pool_size": 50,
+      "active": 15
+    }
+  },
+  {
+    "timestamp": "2025-03-15T14:48:00Z",
+    "level": "INFO",
+    "service": "api-gateway",
+    "message": "All endpoints returning 200",
+    "metadata": {}
+  }
+]

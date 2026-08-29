@@ -1,0 +1,44 @@
+[
+  {
+    "timestamp": "2025-06-15T06:01:00Z",
+    "user": "AlertBot",
+    "role": "Bot",
+    "message": "🚨 CRITICAL: Multiple services reporting DNS resolution failures for internal domains."
+  },
+  {
+    "timestamp": "2025-06-15T06:03:00Z",
+    "user": "Nina Ivanova",
+    "role": "SRE On-Call",
+    "message": "All internal .example.internal domains are failing DNS resolution. External domains seem fine. Was there an infra change?"
+  },
+  {
+    "timestamp": "2025-06-15T06:05:00Z",
+    "user": "Tom Chen",
+    "role": "Infrastructure Engineer",
+    "message": "We started migrating DNS from Route53 to Cloudflare at 3 AM. External zones were migrated but I forgot to migrate the internal zone (example.internal). Route53 was the authoritative resolver for it."
+  },
+  {
+    "timestamp": "2025-06-15T06:07:00Z",
+    "user": "Nina Ivanova",
+    "role": "SRE On-Call",
+    "message": "So once the NS records propagated and traffic shifted to Cloudflare, internal DNS broke because the zone doesn't exist there yet?"
+  },
+  {
+    "timestamp": "2025-06-15T06:08:00Z",
+    "user": "Tom Chen",
+    "role": "Infrastructure Engineer",
+    "message": "Exactly. Adding the internal zone to Cloudflare now. Should be quick since it's a private zone."
+  },
+  {
+    "timestamp": "2025-06-15T06:35:00Z",
+    "user": "Tom Chen",
+    "role": "Infrastructure Engineer",
+    "message": "Internal zone is live on Cloudflare. All services should be resolving now."
+  },
+  {
+    "timestamp": "2025-06-15T06:38:00Z",
+    "user": "Nina Ivanova",
+    "role": "SRE On-Call",
+    "message": "Confirmed, all services healthy. ~35 minutes of internal DNS outage."
+  }
+]

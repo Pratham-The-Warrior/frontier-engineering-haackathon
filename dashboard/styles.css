@@ -1,0 +1,274 @@
+/* ═══════════════════════════════════════════════════════════════
+   P R I S M  —  Sophisticated Command Design System
+   "The Silent Sentinel" — Enterprise Incident Intelligence
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+    /* Sophisticated Command Light Colors */
+    --color-background: #f9fafb;
+    --color-surface: #ffffff;
+    --color-surface-dim: #f3f4f6;
+    --color-surface-bright: #ffffff;
+    --color-surface-container-lowest: #ffffff;
+    --color-surface-container-low: #f3f4f5;
+    --color-surface-container: #edeeef;
+    --color-surface-container-high: #e7e8e9;
+    --color-surface-container-highest: #e1e3e4;
+    --color-on-surface: #111827;
+    --color-on-surface-variant: #4b5563;
+    --color-on-background: #111827;
+    --color-inverse-surface: #2e3132;
+    --color-inverse-on-surface: #f0f1f2;
+    --color-outline: #D1D5DB;
+    --color-outline-variant: #E5E7EB;
+    --color-surface-tint: #1e40af;
+    --color-primary: #1e40af;
+    --color-on-primary: #ffffff;
+    --color-primary-container: #1e40af;
+    --color-on-primary-container: #a8b8ff;
+    --color-inverse-primary: #b8c4ff;
+    --color-secondary: #555f70;
+    --color-on-secondary: #ffffff;
+    --color-secondary-container: #d6e0f4;
+    --color-on-secondary-container: #596374;
+    --color-tertiary: #7c5800;
+    --color-on-tertiary: #ffffff;
+    --color-tertiary-container: #ffdea6;
+    --color-on-tertiary-container: #5b3e00;
+    --color-error: #ba1a1a;
+    --color-on-error: #ffffff;
+    --color-error-container: #ffdad6;
+    --color-on-error-container: #93000a;
+}
+
+html.dark {
+    /* Sophisticated Command Dark Colors */
+    --color-background: #0b1326;
+    --color-surface: #0b1326;
+    --color-surface-dim: #0b1326;
+    --color-surface-bright: #31394d;
+    --color-surface-container-lowest: #060e20;
+    --color-surface-container-low: #131b2e;
+    --color-surface-container: #171f33;
+    --color-surface-container-high: #222a3d;
+    --color-surface-container-highest: #2d3449;
+    --color-on-surface: #dae2fd;
+    --color-on-surface-variant: #c4c5d5;
+    --color-on-background: #dae2fd;
+    --color-inverse-surface: #dae2fd;
+    --color-inverse-on-surface: #283044;
+    --color-outline: #8e909f;
+    --color-outline-variant: #444653;
+    --color-surface-tint: #b8c4ff;
+    --color-primary: #b8c4ff;
+    --color-on-primary: #002584;
+    --color-primary-container: #1e40af;
+    --color-on-primary-container: #a8b8ff;
+    --color-inverse-primary: #3755c3;
+    --color-secondary: #ffb95f;
+    --color-on-secondary: #472a00;
+    --color-secondary-container: #ee9800;
+    --color-on-secondary-container: #5b3800;
+    --color-tertiary: #ffb59a;
+    --color-on-tertiary: #5a1b00;
+    --color-tertiary-container: #872d00;
+    --color-on-tertiary-container: #ffa583;
+    --color-error: #ffb4ab;
+    --color-on-error: #690005;
+    --color-error-container: #93000a;
+    --color-on-error-container: #ffdad6;
+}
+
+/* Map hardcoded layout borders to CSS variables so light/dark mode works instantly */
+.border-\[\#1E293B\], .border-\[\#1E293B\]\/60 {
+    border-color: var(--color-outline-variant) !important;
+}
+
+/* ── Typography & Base ───────────────────────────────────────── */
+body {
+    background-color: var(--color-background);
+    color: var(--color-on-surface);
+    font-family: 'Inter', sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+h1, h2, h3, h4, .font-headline-sm, .font-headline-md, .font-headline-lg, .font-display-lg {
+    font-family: 'Hanken Grotesk', sans-serif;
+    letter-spacing: -0.01em;
+}
+
+/* ── "The Pulse" Component ───────────────────────────────────── */
+.pulse-dot {
+    animation: pulse-breath 3s ease-in-out infinite;
+}
+
+@keyframes pulse-breath {
+    0%, 100% {
+        opacity: 0.35;
+        transform: scale(0.95);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.08);
+    }
+}
+
+/* ── Monochromatic Subtle Scrollbar ─────────────────────────── */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-outline-variant);
+    border-radius: 4px;
+}
+
+/* ── Material Symbols Alignment ─────────────────────────────── */
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+}
+
+/* ── Table Row Transitions ──────────────────────────────────── */
+tr.row-item {
+    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+tr.row-item:hover {
+    background-color: var(--color-surface-container);
+    cursor: pointer;
+}
+
+/* ── Prose Report Output Styles ──────────────────────────────── */
+.prose-report {
+    line-height: 1.75;
+    font-size: 0.925rem;
+    color: var(--color-on-surface);
+}
+
+.prose-report h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin: 1.75rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.prose-report h1:first-child {
+    margin-top: 0;
+}
+
+.prose-report h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin: 1.5rem 0 0.75rem;
+}
+
+.prose-report h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-on-surface-variant);
+    margin: 1.25rem 0 0.5rem;
+}
+
+.prose-report p {
+    margin-bottom: 0.85rem;
+    color: var(--color-on-surface-variant);
+}
+
+.prose-report strong {
+    color: var(--color-on-surface);
+    font-weight: 600;
+}
+
+.prose-report ul, .prose-report ol {
+    margin: 0.5rem 0 1rem 1.5rem;
+    color: var(--color-on-surface-variant);
+}
+
+.prose-report li {
+    margin-bottom: 0.35rem;
+}
+
+.prose-report blockquote {
+    border-left: 3px solid var(--color-primary-container);
+    background: rgba(30, 64, 175, 0.1);
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    border-radius: 0 4px 4px 0;
+    color: var(--color-on-surface);
+    font-style: italic;
+}
+
+.prose-report pre {
+    background: var(--color-surface-container-lowest);
+    border: 1px solid var(--color-outline-variant);
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.825rem;
+    margin: 1rem 0;
+    color: var(--color-primary);
+}
+
+.prose-report code {
+    background: var(--color-surface-container-low);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    color: var(--color-primary);
+}
+
+.prose-report pre code {
+    background: transparent;
+    padding: 0;
+}
+
+.prose-report table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.8rem;
+}
+
+.prose-report th {
+    background: var(--color-surface-container-low);
+    border: 1px solid var(--color-outline-variant);
+    padding: 0.5rem 0.75rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+}
+
+.prose-report td {
+    border: 1px solid var(--color-outline-variant);
+    padding: 0.5rem 0.75rem;
+    color: var(--color-on-surface-variant);
+}
+
+/* ── Toast Element Styles ────────────────────────────────────── */
+.toast-msg {
+    animation: toast-in 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}

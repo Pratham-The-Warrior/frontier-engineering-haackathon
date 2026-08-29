@@ -1,0 +1,55 @@
+[
+  {
+    "timestamp": "2025-06-15T03:00:00Z",
+    "level": "INFO",
+    "service": "infra",
+    "message": "DNS provider migration from Route53 to CloudflareD NS started",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-06-15T03:05:00Z",
+    "level": "INFO",
+    "service": "infra",
+    "message": "NS records updated at registrar — propagation expected 24-48h",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-06-15T06:00:00Z",
+    "level": "ERROR",
+    "service": "api-gateway",
+    "message": "DNS resolution failure for internal-db.example.internal",
+    "metadata": {
+      "error": "NXDOMAIN"
+    }
+  },
+  {
+    "timestamp": "2025-06-15T06:00:30Z",
+    "level": "ERROR",
+    "service": "user-service",
+    "message": "Cannot resolve internal-db.example.internal — falling back failed",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-06-15T06:01:00Z",
+    "level": "ERROR",
+    "service": "order-service",
+    "message": "DNS resolution failure for cache.example.internal",
+    "metadata": {
+      "error": "NXDOMAIN"
+    }
+  },
+  {
+    "timestamp": "2025-06-15T06:30:00Z",
+    "level": "INFO",
+    "service": "infra",
+    "message": "Internal DNS zone example.internal added to Cloudflare",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-06-15T06:35:00Z",
+    "level": "INFO",
+    "service": "api-gateway",
+    "message": "DNS resolution restored for all internal domains",
+    "metadata": {}
+  }
+]

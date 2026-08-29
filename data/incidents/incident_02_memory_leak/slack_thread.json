@@ -1,0 +1,68 @@
+[
+  {
+    "timestamp": "2025-04-02T18:05:00Z",
+    "user": "AlertBot",
+    "role": "Bot",
+    "message": "🚨 ALERT: product-service p99 latency > 2000ms — current: 4200ms."
+  },
+  {
+    "timestamp": "2025-04-02T18:08:00Z",
+    "user": "James Kim",
+    "role": "SRE On-Call",
+    "message": "Looking at it. product-service memory is at 93%. Looks like it's about to OOM."
+  },
+  {
+    "timestamp": "2025-04-02T18:11:00Z",
+    "user": "AlertBot",
+    "role": "Bot",
+    "message": "🚨 ALERT: product-service pod restarted (OOMKilled)."
+  },
+  {
+    "timestamp": "2025-04-02T18:12:00Z",
+    "user": "James Kim",
+    "role": "SRE On-Call",
+    "message": "Pod restarted but memory is climbing fast again. Something is leaking. Checking recent changes."
+  },
+  {
+    "timestamp": "2025-04-02T18:15:00Z",
+    "user": "Lisa Wang",
+    "role": "Backend Engineer",
+    "message": "We enabled the 'extended_cache' feature flag this morning. It caches full product catalogs per-tenant. Could that be it?"
+  },
+  {
+    "timestamp": "2025-04-02T18:18:00Z",
+    "user": "James Kim",
+    "role": "SRE On-Call",
+    "message": "Heap dump shows the cache is holding ~1.4GB of ProductCatalog objects. There's no TTL or max-size set on the extended cache. It just grows unbounded."
+  },
+  {
+    "timestamp": "2025-04-02T18:20:00Z",
+    "user": "Lisa Wang",
+    "role": "Backend Engineer",
+    "message": "That's the bug. The regular cache has TTL and eviction. The extended cache was a quick prototype — eviction wasn't implemented yet."
+  },
+  {
+    "timestamp": "2025-04-02T19:12:00Z",
+    "user": "AlertBot",
+    "role": "Bot",
+    "message": "🚨 ALERT: product-service OOMKilled again (2nd time)."
+  },
+  {
+    "timestamp": "2025-04-02T19:25:00Z",
+    "user": "James Kim",
+    "role": "SRE On-Call",
+    "message": "Toggling the feature flag off now. That should stop the bleeding."
+  },
+  {
+    "timestamp": "2025-04-02T19:35:00Z",
+    "user": "James Kim",
+    "role": "SRE On-Call",
+    "message": "Flag is off, cache cleared. Memory stable at 320MB. Crisis over."
+  },
+  {
+    "timestamp": "2025-04-02T19:40:00Z",
+    "user": "Lisa Wang",
+    "role": "Backend Engineer",
+    "message": "I'll add TTL and max-size to the extended cache before we re-enable the flag. Should have done that from the start."
+  }
+]

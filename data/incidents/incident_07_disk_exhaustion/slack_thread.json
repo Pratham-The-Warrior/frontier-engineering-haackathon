@@ -1,0 +1,32 @@
+[
+  {
+    "timestamp": "2025-08-10T09:16:00Z",
+    "user": "AlertBot",
+    "role": "Bot",
+    "message": "🚨 ALERT: data-pipeline-01 disk full. Pipeline halted."
+  },
+  {
+    "timestamp": "2025-08-10T09:18:00Z",
+    "user": "Maya Singh",
+    "role": "Data Engineer",
+    "message": "Checking. Disk is 100% full. /var/log/data-pipeline has 180GB of log files. That's a week of unrotated logs."
+  },
+  {
+    "timestamp": "2025-08-10T09:20:00Z",
+    "user": "Maya Singh",
+    "role": "Data Engineer",
+    "message": "Found it — log rotation was disabled on Aug 5 for a debugging investigation and never re-enabled. The config change was committed directly without a revert reminder."
+  },
+  {
+    "timestamp": "2025-08-10T09:25:00Z",
+    "user": "Maya Singh",
+    "role": "Data Engineer",
+    "message": "Cleaning old logs and re-enabling rotation. Should have the pipeline back in 20 minutes."
+  },
+  {
+    "timestamp": "2025-08-10T09:50:00Z",
+    "user": "Maya Singh",
+    "role": "Data Engineer",
+    "message": "Pipeline is back and processing the backlog. No data loss — just delayed processing."
+  }
+]

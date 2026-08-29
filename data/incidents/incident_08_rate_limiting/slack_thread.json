@@ -1,0 +1,32 @@
+[
+  {
+    "timestamp": "2025-08-20T10:09:00Z",
+    "user": "AlertBot",
+    "role": "Bot",
+    "message": "🚨 ALERT: email-service queue depth > 10,000. SendGrid rate limited."
+  },
+  {
+    "timestamp": "2025-08-20T10:10:00Z",
+    "user": "Kim Park",
+    "role": "SRE On-Call",
+    "message": "SendGrid is rate-limiting us. Marketing launched a 50K email campaign and it's eating our entire API quota. Transactional emails are blocked too."
+  },
+  {
+    "timestamp": "2025-08-20T10:12:00Z",
+    "user": "Amy Liu",
+    "role": "Marketing Ops",
+    "message": "We didn't know there was a shared quota. We've always used the same email endpoint for campaigns."
+  },
+  {
+    "timestamp": "2025-08-20T10:15:00Z",
+    "user": "Kim Park",
+    "role": "SRE On-Call",
+    "message": "The issue is we have one email queue for everything — campaigns and transactional. When campaign volume spikes, transactional gets crowded out. I'm splitting the queues now."
+  },
+  {
+    "timestamp": "2025-08-20T10:35:00Z",
+    "user": "Kim Park",
+    "role": "SRE On-Call",
+    "message": "Transactional queue is separate now with reserved capacity. Campaign emails throttled. Password resets and order confirmations flowing again."
+  }
+]

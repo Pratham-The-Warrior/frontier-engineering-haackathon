@@ -1,0 +1,36 @@
+{
+  "root_cause": "During DNS provider migration from Route53 to Cloudflare, the internal DNS zone (example.internal) was not included in the migration plan or Terraform configuration. When NS records propagated and traffic shifted to Cloudflare, internal domain resolution failed because the zone didn't exist on the new provider.",
+  "root_cause_category": "infrastructure",
+  "contributing_factors": [
+    "Migration plan and Terraform config only covered public-facing DNS zones",
+    "No pre-migration audit of all DNS zones, including private/internal zones",
+    "Migration was started at 3 AM with limited oversight",
+    "No DNS resolution health check that would have caught the issue before propagation completed"
+  ],
+  "key_timeline_events": [
+    {
+      "timestamp": "2025-06-15T03:00:00Z",
+      "description": "DNS migration started"
+    },
+    {
+      "timestamp": "2025-06-15T06:00:00Z",
+      "description": "NS records propagate — internal DNS starts failing"
+    },
+    {
+      "timestamp": "2025-06-15T06:05:00Z",
+      "description": "Root cause identified — internal zone not migrated"
+    },
+    {
+      "timestamp": "2025-06-15T06:30:00Z",
+      "description": "Internal zone added to Cloudflare"
+    },
+    {
+      "timestamp": "2025-06-15T06:35:00Z",
+      "description": "Full recovery"
+    }
+  ],
+  "severity": "SEV1",
+  "impact_summary": "35 minutes of internal service communication failure. All services depending on internal DNS were affected. External-facing services partially degraded.",
+  "resolution": "Added internal DNS zone (example.internal) to Cloudflare configuration.",
+  "duration_minutes": 35
+}

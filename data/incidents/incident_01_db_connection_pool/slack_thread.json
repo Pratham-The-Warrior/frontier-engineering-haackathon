@@ -1,0 +1,68 @@
+[
+  {
+    "timestamp": "2025-03-15T14:29:00Z",
+    "user": "AlertBot",
+    "role": "Bot",
+    "message": "🚨 ALERT: user-service error rate >5% — current: 12%. Dashboard: https://grafana.internal/d/user-svc"
+  },
+  {
+    "timestamp": "2025-03-15T14:30:00Z",
+    "user": "Sarah Chen",
+    "role": "SRE On-Call",
+    "message": "Ack. Looking at it now. Seeing a spike in 503s from user-service."
+  },
+  {
+    "timestamp": "2025-03-15T14:31:00Z",
+    "user": "Sarah Chen",
+    "role": "SRE On-Call",
+    "message": "DB connection pool is at 100%. All connections seem stuck. Checking what changed."
+  },
+  {
+    "timestamp": "2025-03-15T14:32:00Z",
+    "user": "Mike Torres",
+    "role": "Backend Engineer",
+    "message": "I deployed v2.14.0 about 30 minutes ago. It had a change to the user lookup query — added a JOIN to the preferences table."
+  },
+  {
+    "timestamp": "2025-03-15T14:33:00Z",
+    "user": "Sarah Chen",
+    "role": "SRE On-Call",
+    "message": "Found it. The deploy removed the connection timeout setting from the config. Connections are being acquired but never released when queries hang."
+  },
+  {
+    "timestamp": "2025-03-15T14:34:00Z",
+    "user": "Mike Torres",
+    "role": "Backend Engineer",
+    "message": "Oh no. I refactored the DB config module and the timeout wasn't in the new config schema. It was in a legacy block I removed."
+  },
+  {
+    "timestamp": "2025-03-15T14:35:00Z",
+    "user": "Sarah Chen",
+    "role": "SRE On-Call",
+    "message": "I'm going to hotfix the config to add connection_timeout=5s and idle_timeout=60s. Not rolling back the full deploy since the query change itself is fine."
+  },
+  {
+    "timestamp": "2025-03-15T14:36:00Z",
+    "user": "Priya Patel",
+    "role": "Engineering Manager",
+    "message": "Sounds good. Customer support is getting tickets. Can we get an ETA?"
+  },
+  {
+    "timestamp": "2025-03-15T14:38:00Z",
+    "user": "Sarah Chen",
+    "role": "SRE On-Call",
+    "message": "Hotfix deployed. Pool is draining. Should be back to normal in 2-3 minutes."
+  },
+  {
+    "timestamp": "2025-03-15T14:42:00Z",
+    "user": "Sarah Chen",
+    "role": "SRE On-Call",
+    "message": "Confirmed: error rate back to 0%. All endpoints healthy. Total impact was about 18 minutes."
+  },
+  {
+    "timestamp": "2025-03-15T14:43:00Z",
+    "user": "Priya Patel",
+    "role": "Engineering Manager",
+    "message": "Thanks everyone. Let's write up a post-mortem. We should add a config validation check in CI."
+  }
+]

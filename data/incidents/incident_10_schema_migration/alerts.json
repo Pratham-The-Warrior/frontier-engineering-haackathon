@@ -1,0 +1,23 @@
+[
+  {
+    "timestamp": "2025-09-15T06:00:30Z",
+    "severity": "critical",
+    "source": "PagerDuty",
+    "title": "ETL Pipeline Failed",
+    "description": "order_analytics pipeline failing on NULL constraint violations."
+  },
+  {
+    "timestamp": "2025-09-15T06:30:30Z",
+    "severity": "warning",
+    "source": "Datadog",
+    "title": "Daily Reports Failed",
+    "description": "Reporting service unable to generate daily reports."
+  },
+  {
+    "timestamp": "2025-09-15T08:10:00Z",
+    "severity": "info",
+    "source": "PagerDuty",
+    "title": "Pipeline Recovered",
+    "description": "Data pipeline and reports running successfully."
+  }
+]

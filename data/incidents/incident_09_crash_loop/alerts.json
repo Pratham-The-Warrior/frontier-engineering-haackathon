@@ -1,0 +1,23 @@
+[
+  {
+    "timestamp": "2025-09-01T14:03:00Z",
+    "severity": "critical",
+    "source": "Kubernetes",
+    "title": "CrashLoopBackOff: auth-service",
+    "description": "Pod restarting repeatedly. Liveness probe failing."
+  },
+  {
+    "timestamp": "2025-09-01T14:04:30Z",
+    "severity": "critical",
+    "source": "PagerDuty",
+    "title": "Authentication Unavailable",
+    "description": "No healthy auth-service pods. All login and auth requests failing."
+  },
+  {
+    "timestamp": "2025-09-01T14:16:30Z",
+    "severity": "info",
+    "source": "PagerDuty",
+    "title": "auth-service Recovered",
+    "description": "Pods healthy. Authentication working."
+  }
+]

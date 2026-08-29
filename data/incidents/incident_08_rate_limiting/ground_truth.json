@@ -1,0 +1,36 @@
+{
+  "root_cause": "A 50,000-recipient marketing email campaign consumed the entire shared SendGrid API quota, rate-limiting all email sending including critical transactional emails (password resets, order confirmations). There was no separation between campaign and transactional email queues.",
+  "root_cause_category": "architecture",
+  "contributing_factors": [
+    "Single email queue shared between marketing campaigns and transactional emails",
+    "No rate limiting or throttling on campaign email sending",
+    "Marketing team unaware of shared API quota — no coordination process for large campaigns",
+    "No priority system to protect transactional emails during high-volume sends"
+  ],
+  "key_timeline_events": [
+    {
+      "timestamp": "2025-08-20T10:00:00Z",
+      "description": "50K email campaign launched"
+    },
+    {
+      "timestamp": "2025-08-20T10:08:00Z",
+      "description": "SendGrid rate limit hit — all emails blocked"
+    },
+    {
+      "timestamp": "2025-08-20T10:10:00Z",
+      "description": "Transactional emails (password resets, order confirmations) blocked"
+    },
+    {
+      "timestamp": "2025-08-20T10:30:00Z",
+      "description": "Queue split implemented — transactional emails prioritized"
+    },
+    {
+      "timestamp": "2025-08-20T10:35:00Z",
+      "description": "Transactional emails restored"
+    }
+  ],
+  "severity": "SEV2",
+  "impact_summary": "27 minutes where no emails could be sent. Critical transactional emails (password resets, order confirmations) delayed. Campaign emails throttled to 100/min.",
+  "resolution": "Split email queues — dedicated transactional queue with reserved capacity. Campaign queue throttled.",
+  "duration_minutes": 27
+}

@@ -1,0 +1,35 @@
+{
+  "root_cause": "The SSL certificate auto-renewal cron job was running on a legacy infrastructure server that was decommissioned during a cloud migration. The cron was not migrated to the new infrastructure, so the certificate expired without renewal.",
+  "root_cause_category": "infrastructure",
+  "contributing_factors": [
+    "No audit of cron jobs on legacy servers before decommission",
+    "No certificate expiry monitoring/alerting (only caught when it actually expired)",
+    "Cloud migration checklist did not include certificate management tasks"
+  ],
+  "key_timeline_events": [
+    {
+      "timestamp": "2025-06-01T00:00:00Z",
+      "description": "SSL certificate expired"
+    },
+    {
+      "timestamp": "2025-06-01T00:00:10Z",
+      "description": "All HTTPS traffic begins failing"
+    },
+    {
+      "timestamp": "2025-06-01T00:10:00Z",
+      "description": "Root cause identified — renewal cron on decommissioned server"
+    },
+    {
+      "timestamp": "2025-06-01T00:45:00Z",
+      "description": "New certificate installed"
+    },
+    {
+      "timestamp": "2025-06-01T00:46:00Z",
+      "description": "Traffic restored"
+    }
+  ],
+  "severity": "SEV1",
+  "impact_summary": "45 minutes of complete API outage. All HTTPS traffic rejected. Mobile and web clients unable to connect. All downstream services affected.",
+  "resolution": "Manually generated and installed new SSL certificate. Set up cert renewal on new infrastructure.",
+  "duration_minutes": 46
+}

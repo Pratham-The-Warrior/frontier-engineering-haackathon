@@ -1,0 +1,12 @@
+[
+  {
+    "sha": "ssl001",
+    "timestamp": "2025-05-01T10:00:00Z",
+    "author": "Ops Team",
+    "message": "chore: decommission legacy infra servers",
+    "files_changed": [
+      "infra/servers.yaml"
+    ],
+    "diff_summary": "Removed legacy-infra-01 through legacy-infra-05 from server inventory. Migrated services to cloud instances. Note: cron jobs on these servers were not audited before decommission."
+  }
+]

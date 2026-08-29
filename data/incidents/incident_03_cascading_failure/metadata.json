@@ -1,0 +1,4 @@
+{
+  "incident_id": "INC-003",
+  "title": "Cascading Microservice Failure Due to Circuit Breaker Misconfiguration"
+}

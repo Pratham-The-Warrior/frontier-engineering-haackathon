@@ -1,0 +1,44 @@
+{
+  "root_cause": "Database connection pool timeout settings were accidentally removed during a config schema migration in deploy v2.14.0. Without timeouts, connections acquired by slow queries were never released, causing pool exhaustion.",
+  "root_cause_category": "configuration",
+  "contributing_factors": [
+    "The new config schema did not include connection pool timeout settings that existed in the legacy config block",
+    "No config validation in CI to catch missing required database settings",
+    "The new user preferences JOIN query was slower than the original, accelerating pool exhaustion",
+    "No connection pool monitoring alert at lower thresholds (e.g. 50%) to provide earlier warning"
+  ],
+  "key_timeline_events": [
+    {
+      "timestamp": "2025-03-15T14:02:45Z",
+      "description": "Deploy v2.14.0 completed — config migration removed timeout settings"
+    },
+    {
+      "timestamp": "2025-03-15T14:15:33Z",
+      "description": "Connection pool usage begins climbing (75%)"
+    },
+    {
+      "timestamp": "2025-03-15T14:28:30Z",
+      "description": "First alert: pool at 90%"
+    },
+    {
+      "timestamp": "2025-03-15T14:30:12Z",
+      "description": "Pool exhausted — first user-facing 503 errors"
+    },
+    {
+      "timestamp": "2025-03-15T14:33:00Z",
+      "description": "Root cause identified — missing timeout config"
+    },
+    {
+      "timestamp": "2025-03-15T14:45:00Z",
+      "description": "Hotfix deployed — timeouts restored"
+    },
+    {
+      "timestamp": "2025-03-15T14:48:00Z",
+      "description": "Full recovery confirmed"
+    }
+  ],
+  "severity": "SEV2",
+  "impact_summary": "18 minutes of degraded service. Users experienced 503 errors on user and order endpoints. Estimated ~2,000 failed requests.",
+  "resolution": "Hotfix applied to restore connection_timeout=5s and idle_timeout=60s in the new config schema.",
+  "duration_minutes": 18
+}

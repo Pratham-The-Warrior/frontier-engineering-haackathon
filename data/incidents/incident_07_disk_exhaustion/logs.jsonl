@@ -1,0 +1,66 @@
+[
+  {
+    "timestamp": "2025-08-05T02:00:00Z",
+    "level": "INFO",
+    "service": "data-pipeline",
+    "message": "Config update applied: log_rotation_enabled=false (for debugging investigation)",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-08-08T14:00:00Z",
+    "level": "WARN",
+    "service": "monitoring",
+    "message": "Disk usage at 75% on data-pipeline-01",
+    "metadata": {
+      "disk_used_pct": 75
+    }
+  },
+  {
+    "timestamp": "2025-08-10T06:00:00Z",
+    "level": "WARN",
+    "service": "monitoring",
+    "message": "Disk usage at 90% on data-pipeline-01",
+    "metadata": {
+      "disk_used_pct": 90
+    }
+  },
+  {
+    "timestamp": "2025-08-10T09:15:00Z",
+    "level": "ERROR",
+    "service": "data-pipeline",
+    "message": "Write failed: No space left on device",
+    "metadata": {
+      "errno": "ENOSPC"
+    }
+  },
+  {
+    "timestamp": "2025-08-10T09:15:30Z",
+    "level": "FATAL",
+    "service": "data-pipeline",
+    "message": "Pipeline halted — cannot write intermediate results to disk",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-08-10T09:16:00Z",
+    "level": "ERROR",
+    "service": "data-pipeline",
+    "message": "Downstream consumers stalled — no new data arriving",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-08-10T09:45:00Z",
+    "level": "INFO",
+    "service": "data-pipeline",
+    "message": "Old logs cleaned. Log rotation re-enabled. Disk usage at 35%.",
+    "metadata": {
+      "disk_used_pct": 35
+    }
+  },
+  {
+    "timestamp": "2025-08-10T09:50:00Z",
+    "level": "INFO",
+    "service": "data-pipeline",
+    "message": "Pipeline resumed. Processing backlog.",
+    "metadata": {}
+  }
+]

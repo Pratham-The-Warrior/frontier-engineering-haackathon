@@ -1,0 +1,139 @@
+[
+  {
+    "timestamp": "2025-04-02T08:00:00Z",
+    "level": "INFO",
+    "service": "product-service",
+    "message": "Feature flag 'enable_extended_cache' toggled ON",
+    "metadata": {
+      "flag_id": "ff-2201"
+    }
+  },
+  {
+    "timestamp": "2025-04-02T10:30:00Z",
+    "level": "INFO",
+    "service": "product-service",
+    "message": "Memory usage: 512MB / 2048MB",
+    "metadata": {
+      "heap_used_mb": 512
+    }
+  },
+  {
+    "timestamp": "2025-04-02T14:00:00Z",
+    "level": "WARN",
+    "service": "product-service",
+    "message": "Memory usage: 1200MB / 2048MB",
+    "metadata": {
+      "heap_used_mb": 1200
+    }
+  },
+  {
+    "timestamp": "2025-04-02T16:30:00Z",
+    "level": "WARN",
+    "service": "product-service",
+    "message": "Memory usage: 1650MB / 2048MB — GC pause 450ms",
+    "metadata": {
+      "heap_used_mb": 1650,
+      "gc_pause_ms": 450
+    }
+  },
+  {
+    "timestamp": "2025-04-02T17:45:00Z",
+    "level": "ERROR",
+    "service": "product-service",
+    "message": "Memory usage: 1900MB / 2048MB — GC unable to free sufficient memory",
+    "metadata": {
+      "heap_used_mb": 1900,
+      "gc_freed_mb": 12
+    }
+  },
+  {
+    "timestamp": "2025-04-02T18:00:00Z",
+    "level": "ERROR",
+    "service": "product-service",
+    "message": "Response latency degraded: p99 = 4200ms (normal: 200ms)",
+    "metadata": {
+      "p99_ms": 4200
+    }
+  },
+  {
+    "timestamp": "2025-04-02T18:10:00Z",
+    "level": "FATAL",
+    "service": "product-service",
+    "message": "OutOfMemoryError: Java heap space",
+    "metadata": {
+      "heap_used_mb": 2048
+    }
+  },
+  {
+    "timestamp": "2025-04-02T18:10:05Z",
+    "level": "INFO",
+    "service": "kubernetes",
+    "message": "Pod product-service-7b8d9f restarted (OOMKilled)",
+    "metadata": {
+      "restart_count": 1
+    }
+  },
+  {
+    "timestamp": "2025-04-02T18:15:00Z",
+    "level": "INFO",
+    "service": "product-service",
+    "message": "Memory usage: 480MB / 2048MB (after restart)",
+    "metadata": {
+      "heap_used_mb": 480
+    }
+  },
+  {
+    "timestamp": "2025-04-02T18:45:00Z",
+    "level": "WARN",
+    "service": "product-service",
+    "message": "Memory usage: 980MB / 2048MB (climbing again)",
+    "metadata": {
+      "heap_used_mb": 980
+    }
+  },
+  {
+    "timestamp": "2025-04-02T19:10:00Z",
+    "level": "FATAL",
+    "service": "product-service",
+    "message": "OutOfMemoryError: Java heap space (second occurrence)",
+    "metadata": {
+      "heap_used_mb": 2048
+    }
+  },
+  {
+    "timestamp": "2025-04-02T19:10:05Z",
+    "level": "INFO",
+    "service": "kubernetes",
+    "message": "Pod product-service-7b8d9f restarted (OOMKilled)",
+    "metadata": {
+      "restart_count": 2
+    }
+  },
+  {
+    "timestamp": "2025-04-02T19:30:00Z",
+    "level": "INFO",
+    "service": "product-service",
+    "message": "Feature flag 'enable_extended_cache' toggled OFF",
+    "metadata": {
+      "flag_id": "ff-2201"
+    }
+  },
+  {
+    "timestamp": "2025-04-02T19:35:00Z",
+    "level": "INFO",
+    "service": "product-service",
+    "message": "Cache cleared. Memory usage: 320MB / 2048MB",
+    "metadata": {
+      "heap_used_mb": 320
+    }
+  },
+  {
+    "timestamp": "2025-04-02T20:30:00Z",
+    "level": "INFO",
+    "service": "product-service",
+    "message": "Memory usage stable: 350MB / 2048MB",
+    "metadata": {
+      "heap_used_mb": 350
+    }
+  }
+]

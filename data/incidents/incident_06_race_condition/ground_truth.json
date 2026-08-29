@@ -1,0 +1,36 @@
+{
+  "root_cause": "The payment idempotency check used a read-then-write pattern (SELECT then INSERT) without row-level locking. Under the high concurrency of the flash sale (~450 req/s vs normal 50 req/s), multiple threads could simultaneously read 'not charged' for the same order before any of them wrote the charge record, resulting in duplicate payments.",
+  "root_cause_category": "code_bug",
+  "contributing_factors": [
+    "Application-level idempotency without database-level enforcement",
+    "Flash sale caused 9x normal traffic, exposing the race condition",
+    "No load testing of the payment path at flash-sale traffic levels",
+    "Idempotency implementation was added recently without a concurrent-access test"
+  ],
+  "key_timeline_events": [
+    {
+      "timestamp": "2025-07-20T11:00:00Z",
+      "description": "Flash sale started — traffic surges to 450 req/s"
+    },
+    {
+      "timestamp": "2025-07-20T11:05:00Z",
+      "description": "First duplicate charge detected"
+    },
+    {
+      "timestamp": "2025-07-20T11:08:00Z",
+      "description": "Race condition identified in idempotency check"
+    },
+    {
+      "timestamp": "2025-07-20T11:15:00Z",
+      "description": "Database UNIQUE constraint applied — duplicates stopped"
+    },
+    {
+      "timestamp": "2025-07-20T11:30:00Z",
+      "description": "All 32 refunds processed"
+    }
+  ],
+  "severity": "SEV1",
+  "impact_summary": "32 customers double-charged totaling ~$4,800. All refunds issued within 30 minutes. Reputational risk during high-visibility flash sale event.",
+  "resolution": "Added database-level UNIQUE constraint on (order_id, charge_status) to enforce idempotency at the DB layer. Processed refunds for all affected orders.",
+  "duration_minutes": 30
+}

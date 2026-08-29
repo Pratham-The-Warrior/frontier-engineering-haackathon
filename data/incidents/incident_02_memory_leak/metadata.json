@@ -1,0 +1,4 @@
+{
+  "incident_id": "INC-002",
+  "title": "Memory Leak in Caching Layer"
+}

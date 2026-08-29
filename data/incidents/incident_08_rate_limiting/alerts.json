@@ -1,0 +1,23 @@
+[
+  {
+    "timestamp": "2025-08-20T10:05:00Z",
+    "severity": "warning",
+    "source": "Datadog",
+    "title": "SendGrid Quota > 80%",
+    "description": "Email sending quota at 80% utilization."
+  },
+  {
+    "timestamp": "2025-08-20T10:08:00Z",
+    "severity": "critical",
+    "source": "PagerDuty",
+    "title": "SendGrid Rate Limited",
+    "description": "All email sending blocked. HTTP 429 responses."
+  },
+  {
+    "timestamp": "2025-08-20T10:35:00Z",
+    "severity": "info",
+    "source": "PagerDuty",
+    "title": "Email Service Recovered",
+    "description": "Transactional emails flowing. Campaign emails throttled."
+  }
+]

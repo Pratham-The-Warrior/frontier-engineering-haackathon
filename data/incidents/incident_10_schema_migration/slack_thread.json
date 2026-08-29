@@ -1,0 +1,38 @@
+[
+  {
+    "timestamp": "2025-09-15T06:05:00Z",
+    "user": "AlertBot",
+    "role": "Bot",
+    "message": "🚨 ALERT: data-pipeline ETL job failed. order_analytics table has NULL constraint violations."
+  },
+  {
+    "timestamp": "2025-09-15T06:10:00Z",
+    "user": "Maya Singh",
+    "role": "Data Engineer",
+    "message": "The 'status' column was added by last night's migration but it's all NULLs. The backfill migration failed. Checking why."
+  },
+  {
+    "timestamp": "2025-09-15T06:15:00Z",
+    "user": "Maya Singh",
+    "role": "Data Engineer",
+    "message": "migration_043 (backfill) depends on a function defined in migration_044, but migrations run in order. 043 ran first, couldn't find the function, and failed. 042 (add column) had already committed, so we have the column with no data."
+  },
+  {
+    "timestamp": "2025-09-15T06:20:00Z",
+    "user": "Jake Brown",
+    "role": "Backend Engineer",
+    "message": "That's my fault. I split the original migration into 3 parts but numbered them wrong. 044 should have been 043 and vice versa."
+  },
+  {
+    "timestamp": "2025-09-15T06:25:00Z",
+    "user": "Maya Singh",
+    "role": "Data Engineer",
+    "message": "OK. The fix is to manually run 044 first, then re-run 043. But we also need to re-run the ETL pipeline to fix the analytics data."
+  },
+  {
+    "timestamp": "2025-09-15T08:10:00Z",
+    "user": "Maya Singh",
+    "role": "Data Engineer",
+    "message": "All fixed. Migrations complete, pipeline re-run, analytics data is clean. Dashboards look normal now."
+  }
+]

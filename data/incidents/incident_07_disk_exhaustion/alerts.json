@@ -1,0 +1,30 @@
+[
+  {
+    "timestamp": "2025-08-08T14:00:00Z",
+    "severity": "warning",
+    "source": "Datadog",
+    "title": "Disk Usage > 75%",
+    "description": "data-pipeline-01 disk at 75%."
+  },
+  {
+    "timestamp": "2025-08-10T06:00:00Z",
+    "severity": "warning",
+    "source": "Datadog",
+    "title": "Disk Usage > 90%",
+    "description": "data-pipeline-01 disk at 90%."
+  },
+  {
+    "timestamp": "2025-08-10T09:15:30Z",
+    "severity": "critical",
+    "source": "PagerDuty",
+    "title": "data-pipeline Halted",
+    "description": "No space left on device. Pipeline unable to write."
+  },
+  {
+    "timestamp": "2025-08-10T09:50:00Z",
+    "severity": "info",
+    "source": "PagerDuty",
+    "title": "data-pipeline Recovered",
+    "description": "Pipeline resumed processing."
+  }
+]

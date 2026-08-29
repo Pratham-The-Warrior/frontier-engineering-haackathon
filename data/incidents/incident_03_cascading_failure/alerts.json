@@ -1,0 +1,30 @@
+[
+  {
+    "timestamp": "2025-05-10T09:35:00Z",
+    "severity": "warning",
+    "source": "Datadog",
+    "title": "payment-service Timeout Rate Elevated",
+    "description": "Timeout rate to inventory-service at 50%."
+  },
+  {
+    "timestamp": "2025-05-10T09:38:30Z",
+    "severity": "critical",
+    "source": "PagerDuty",
+    "title": "payment-service Thread Pool Exhausted",
+    "description": "All 200 threads in use. Service unable to accept new requests."
+  },
+  {
+    "timestamp": "2025-05-10T09:40:00Z",
+    "severity": "critical",
+    "source": "PagerDuty",
+    "title": "Checkout Flow DOWN",
+    "description": "checkout-service returning 503. Revenue impact."
+  },
+  {
+    "timestamp": "2025-05-10T10:05:00Z",
+    "severity": "info",
+    "source": "PagerDuty",
+    "title": "All Services Recovered",
+    "description": "Payment, checkout, and notification services all healthy."
+  }
+]

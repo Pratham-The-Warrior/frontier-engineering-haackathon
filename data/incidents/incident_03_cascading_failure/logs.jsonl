@@ -1,0 +1,137 @@
+[
+  {
+    "timestamp": "2025-05-10T09:00:00Z",
+    "level": "INFO",
+    "service": "payment-service",
+    "message": "Deploy v3.2.0 completed — updated circuit breaker library to v2.0",
+    "metadata": {
+      "deploy_id": "dep-9102"
+    }
+  },
+  {
+    "timestamp": "2025-05-10T09:30:00Z",
+    "level": "WARN",
+    "service": "inventory-service",
+    "message": "Experiencing intermittent database slowness",
+    "metadata": {
+      "avg_query_ms": 850
+    }
+  },
+  {
+    "timestamp": "2025-05-10T09:32:00Z",
+    "level": "WARN",
+    "service": "payment-service",
+    "message": "Request to inventory-service timed out after 5000ms",
+    "metadata": {
+      "upstream": "inventory-service"
+    }
+  },
+  {
+    "timestamp": "2025-05-10T09:33:00Z",
+    "level": "INFO",
+    "service": "payment-service",
+    "message": "Circuit breaker for inventory-service: CLOSED (1/10 failures)",
+    "metadata": {
+      "state": "CLOSED",
+      "failure_count": 1,
+      "threshold": 10
+    }
+  },
+  {
+    "timestamp": "2025-05-10T09:35:00Z",
+    "level": "WARN",
+    "service": "payment-service",
+    "message": "Multiple timeouts to inventory-service",
+    "metadata": {
+      "failure_count": 5
+    }
+  },
+  {
+    "timestamp": "2025-05-10T09:38:00Z",
+    "level": "ERROR",
+    "service": "payment-service",
+    "message": "Circuit breaker for inventory-service OPENED — but requests still being sent!",
+    "metadata": {
+      "state": "OPEN",
+      "failure_count": 10,
+      "bug": "v2.0 circuit breaker open state not blocking requests"
+    }
+  },
+  {
+    "timestamp": "2025-05-10T09:39:00Z",
+    "level": "ERROR",
+    "service": "payment-service",
+    "message": "Thread pool exhausted — all 200 threads waiting on inventory-service responses",
+    "metadata": {
+      "active_threads": 200,
+      "max_threads": 200
+    }
+  },
+  {
+    "timestamp": "2025-05-10T09:40:00Z",
+    "level": "ERROR",
+    "service": "checkout-service",
+    "message": "payment-service returning 503 — cannot process checkouts",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-05-10T09:40:30Z",
+    "level": "ERROR",
+    "service": "api-gateway",
+    "message": "Multiple backend services degraded: payment-service, checkout-service",
+    "metadata": {
+      "degraded_services": [
+        "payment-service",
+        "checkout-service"
+      ]
+    }
+  },
+  {
+    "timestamp": "2025-05-10T09:41:00Z",
+    "level": "ERROR",
+    "service": "notification-service",
+    "message": "Unable to send order confirmation emails — payment-service unavailable",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-05-10T09:55:00Z",
+    "level": "INFO",
+    "service": "payment-service",
+    "message": "Rollback to v3.1.9 initiated",
+    "metadata": {
+      "deploy_id": "dep-9103"
+    }
+  },
+  {
+    "timestamp": "2025-05-10T09:58:00Z",
+    "level": "INFO",
+    "service": "payment-service",
+    "message": "Rollback complete. Circuit breaker v1.x restored.",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-05-10T10:00:00Z",
+    "level": "INFO",
+    "service": "payment-service",
+    "message": "Thread pool recovered. Requests flowing normally.",
+    "metadata": {
+      "active_threads": 25
+    }
+  },
+  {
+    "timestamp": "2025-05-10T10:02:00Z",
+    "level": "INFO",
+    "service": "inventory-service",
+    "message": "Database performance recovered",
+    "metadata": {
+      "avg_query_ms": 45
+    }
+  },
+  {
+    "timestamp": "2025-05-10T10:05:00Z",
+    "level": "INFO",
+    "service": "api-gateway",
+    "message": "All services healthy",
+    "metadata": {}
+  }
+]

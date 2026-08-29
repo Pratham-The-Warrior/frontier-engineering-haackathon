@@ -1,0 +1,38 @@
+[
+  {
+    "timestamp": "2025-09-01T14:04:00Z",
+    "user": "AlertBot",
+    "role": "Bot",
+    "message": "🚨 ALERT: auth-service in CrashLoopBackOff. Authentication unavailable."
+  },
+  {
+    "timestamp": "2025-09-01T14:05:00Z",
+    "user": "Carlos Ruiz",
+    "role": "SRE On-Call",
+    "message": "Auth is down. Pods are crash-looping. Let me check what deployed."
+  },
+  {
+    "timestamp": "2025-09-01T14:06:00Z",
+    "user": "Carlos Ruiz",
+    "role": "SRE On-Call",
+    "message": "v4.1.0 added a new /healthz endpoint that checks DB connectivity. But the liveness probe has no initialDelaySeconds — it starts checking immediately on pod start, before the DB connection pool is ready."
+  },
+  {
+    "timestamp": "2025-09-01T14:07:00Z",
+    "user": "Emma Watson",
+    "role": "Backend Engineer",
+    "message": "That's my bad. I set up /healthz to check DB as a liveness probe. It should be a readiness probe. Liveness should only check if the process is alive."
+  },
+  {
+    "timestamp": "2025-09-01T14:08:00Z",
+    "user": "Carlos Ruiz",
+    "role": "SRE On-Call",
+    "message": "Fixing now. Changing liveness to simple process check, adding initialDelaySeconds=30, and moving DB check to readiness probe."
+  },
+  {
+    "timestamp": "2025-09-01T14:16:00Z",
+    "user": "Carlos Ruiz",
+    "role": "SRE On-Call",
+    "message": "Fixed. Auth pods are stable. All authentication working again. Total downtime: ~12 minutes."
+  }
+]

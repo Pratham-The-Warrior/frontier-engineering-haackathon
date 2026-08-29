@@ -1,0 +1,24 @@
+[
+  {
+    "sha": "k8s001",
+    "timestamp": "2025-09-01T13:30:00Z",
+    "author": "Emma Watson",
+    "message": "feat: add /healthz endpoint with DB connectivity check",
+    "files_changed": [
+      "src/api/health.py",
+      "k8s/deployment.yaml"
+    ],
+    "diff_summary": "Added /healthz endpoint that checks DB connection. Configured as liveness probe in Kubernetes deployment. No initialDelaySeconds. No separate readiness probe."
+  },
+  {
+    "sha": "k8s002",
+    "timestamp": "2025-09-01T14:12:00Z",
+    "author": "Carlos Ruiz",
+    "message": "hotfix: fix health check configuration",
+    "files_changed": [
+      "src/api/health.py",
+      "k8s/deployment.yaml"
+    ],
+    "diff_summary": "Liveness probe now checks only process alive status. Readiness probe checks DB connectivity. Added initialDelaySeconds=30 to liveness probe."
+  }
+]

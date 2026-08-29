@@ -1,0 +1,38 @@
+[
+  {
+    "timestamp": "2025-06-01T00:02:00Z",
+    "user": "AlertBot",
+    "role": "Bot",
+    "message": "🚨 CRITICAL: All HTTPS traffic to api.example.com failing. SSL certificate expired."
+  },
+  {
+    "timestamp": "2025-06-01T00:05:00Z",
+    "user": "Carlos Ruiz",
+    "role": "SRE On-Call",
+    "message": "Cert expired at midnight. Our auto-renewal cron job hasn't run. Checking why."
+  },
+  {
+    "timestamp": "2025-06-01T00:10:00Z",
+    "user": "Carlos Ruiz",
+    "role": "SRE On-Call",
+    "message": "Found it. The cert renewal cron was running on the old infra box that was decommissioned last month during the cloud migration. Nobody moved the cron to the new infra."
+  },
+  {
+    "timestamp": "2025-06-01T00:15:00Z",
+    "user": "Carlos Ruiz",
+    "role": "SRE On-Call",
+    "message": "Manually generating a new cert via Let's Encrypt now."
+  },
+  {
+    "timestamp": "2025-06-01T00:40:00Z",
+    "user": "Carlos Ruiz",
+    "role": "SRE On-Call",
+    "message": "New cert generated and deployed. Waiting for propagation."
+  },
+  {
+    "timestamp": "2025-06-01T00:46:00Z",
+    "user": "Carlos Ruiz",
+    "role": "SRE On-Call",
+    "message": "Traffic restored. Total downtime ~45 minutes. Need to set up cert renewal on the new infra and add expiry monitoring."
+  }
+]

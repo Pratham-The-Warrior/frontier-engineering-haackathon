@@ -1,0 +1,36 @@
+{
+  "root_cause": "Schema migrations were numbered in the wrong order. Migration 043 (backfill status values) depended on a function defined in migration 044 (compute_status), but migrations run sequentially by number. Migration 043 failed because the function didn't exist yet, leaving the status column populated with NULL values and corrupting downstream analytics.",
+  "root_cause_category": "code_bug",
+  "contributing_factors": [
+    "Migrations were split into 3 parts but numbered incorrectly — dependency ordering was wrong",
+    "Migration 042 committed independently, so the column existed without data even after 043 failed",
+    "No migration dependency validation in the migration runner",
+    "No dry-run or staging test of the migration sequence before production"
+  ],
+  "key_timeline_events": [
+    {
+      "timestamp": "2025-09-15T03:00:00Z",
+      "description": "Migrations run — 042 succeeds, 043 fails due to missing function"
+    },
+    {
+      "timestamp": "2025-09-15T06:00:00Z",
+      "description": "ETL pipeline fails on NULL status values"
+    },
+    {
+      "timestamp": "2025-09-15T06:15:00Z",
+      "description": "Root cause identified — migration ordering bug"
+    },
+    {
+      "timestamp": "2025-09-15T08:00:00Z",
+      "description": "Migrations manually reordered and re-run"
+    },
+    {
+      "timestamp": "2025-09-15T08:10:00Z",
+      "description": "Data pipeline and dashboards recovered"
+    }
+  ],
+  "severity": "SEV2",
+  "impact_summary": "~5 hours of corrupted analytics data. Daily reports failed. Analytics dashboards showed blank/incorrect data. Data pipeline was re-run to fix.",
+  "resolution": "Manually ran migration 044 first, then re-ran 043. Re-ran ETL pipeline to fix analytics data.",
+  "duration_minutes": 310
+}

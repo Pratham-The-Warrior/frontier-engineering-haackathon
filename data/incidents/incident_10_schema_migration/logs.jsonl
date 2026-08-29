@@ -1,0 +1,76 @@
+[
+  {
+    "timestamp": "2025-09-15T03:00:00Z",
+    "level": "INFO",
+    "service": "migration-runner",
+    "message": "Running pending migrations: migration_042_add_status_column, migration_043_backfill_status",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-09-15T03:00:30Z",
+    "level": "INFO",
+    "service": "migration-runner",
+    "message": "migration_042 completed: added 'status' column with DEFAULT NULL",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-09-15T03:01:00Z",
+    "level": "ERROR",
+    "service": "migration-runner",
+    "message": "migration_043 failed: cannot backfill — references migration_044 function that doesn't exist yet",
+    "metadata": {
+      "error": "function compute_status() does not exist"
+    }
+  },
+  {
+    "timestamp": "2025-09-15T03:01:05Z",
+    "level": "WARN",
+    "service": "migration-runner",
+    "message": "migration_043 rolled back. migration_042 committed (status column exists but is empty).",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-09-15T06:00:00Z",
+    "level": "ERROR",
+    "service": "data-pipeline",
+    "message": "ETL job failed: NOT NULL constraint violation on 'status' column in analytics table",
+    "metadata": {
+      "table": "order_analytics"
+    }
+  },
+  {
+    "timestamp": "2025-09-15T06:01:00Z",
+    "level": "ERROR",
+    "service": "data-pipeline",
+    "message": "Pipeline writing NULL status values. Downstream analytics dashboards showing blank data.",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-09-15T06:30:00Z",
+    "level": "ERROR",
+    "service": "reporting-service",
+    "message": "Daily report generation failed: division by zero — status counts are all NULL",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-09-15T08:00:00Z",
+    "level": "INFO",
+    "service": "migration-runner",
+    "message": "migration_044 (compute_status function) manually applied",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-09-15T08:05:00Z",
+    "level": "INFO",
+    "service": "migration-runner",
+    "message": "migration_043 (backfill) re-run successfully — all status values populated",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-09-15T08:10:00Z",
+    "level": "INFO",
+    "service": "data-pipeline",
+    "message": "Pipeline re-run. All data consistent.",
+    "metadata": {}
+  }
+]

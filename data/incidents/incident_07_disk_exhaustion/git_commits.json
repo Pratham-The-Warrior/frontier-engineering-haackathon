@@ -1,0 +1,12 @@
+[
+  {
+    "sha": "disk001",
+    "timestamp": "2025-08-05T01:55:00Z",
+    "author": "Maya Singh",
+    "message": "debug: disable log rotation temporarily for investigation",
+    "files_changed": [
+      "config/data-pipeline.yaml"
+    ],
+    "diff_summary": "Set log_rotation_enabled=false to preserve full logs during debug investigation of data corruption issue. TODO: re-enable after investigation."
+  }
+]

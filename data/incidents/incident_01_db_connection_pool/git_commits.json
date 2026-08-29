@@ -1,0 +1,54 @@
+[
+  {
+    "sha": "a1b2c3d",
+    "timestamp": "2025-03-15T11:30:00Z",
+    "author": "Mike Torres",
+    "message": "refactor: migrate DB config to new schema module",
+    "files_changed": [
+      "src/config/database.py",
+      "src/config/schema.py"
+    ],
+    "diff_summary": "Moved database configuration from legacy config block to new typed schema. Removed deprecated fields including connection pool settings that were in the legacy block."
+  },
+  {
+    "sha": "e4f5g6h",
+    "timestamp": "2025-03-15T12:15:00Z",
+    "author": "Mike Torres",
+    "message": "feat: add user preferences JOIN to lookup query",
+    "files_changed": [
+      "src/services/user_service.py",
+      "src/models/user.py"
+    ],
+    "diff_summary": "Added LEFT JOIN to user_preferences table in the main user lookup query. New query returns preferences alongside user data."
+  },
+  {
+    "sha": "i7j8k9l",
+    "timestamp": "2025-03-15T13:00:00Z",
+    "author": "Mike Torres",
+    "message": "test: update user service tests for preferences",
+    "files_changed": [
+      "tests/test_user_service.py"
+    ],
+    "diff_summary": "Updated test fixtures and assertions for the new preferences JOIN."
+  },
+  {
+    "sha": "m0n1o2p",
+    "timestamp": "2025-03-15T13:45:00Z",
+    "author": "CI Bot",
+    "message": "chore: bump version to v2.14.0",
+    "files_changed": [
+      "version.txt"
+    ],
+    "diff_summary": "Version bump for release."
+  },
+  {
+    "sha": "q3r4s5t",
+    "timestamp": "2025-03-15T14:45:00Z",
+    "author": "Sarah Chen",
+    "message": "hotfix: restore connection pool timeout settings",
+    "files_changed": [
+      "src/config/schema.py"
+    ],
+    "diff_summary": "Added connection_timeout=5s and idle_timeout=60s to the new config schema. These were accidentally dropped during the config migration in a1b2c3d."
+  }
+]

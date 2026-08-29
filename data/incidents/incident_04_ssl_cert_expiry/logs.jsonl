@@ -1,0 +1,51 @@
+[
+  {
+    "timestamp": "2025-06-01T00:00:05Z",
+    "level": "ERROR",
+    "service": "nginx",
+    "message": "SSL certificate for api.example.com has expired",
+    "metadata": {
+      "domain": "api.example.com",
+      "expiry": "2025-06-01T00:00:00Z"
+    }
+  },
+  {
+    "timestamp": "2025-06-01T00:00:10Z",
+    "level": "ERROR",
+    "service": "nginx",
+    "message": "TLS handshake failure — client connections rejected",
+    "metadata": {
+      "error": "certificate_expired"
+    }
+  },
+  {
+    "timestamp": "2025-06-01T00:01:00Z",
+    "level": "ERROR",
+    "service": "api-gateway",
+    "message": "Upstream SSL error — all HTTPS traffic failing",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-06-01T00:05:00Z",
+    "level": "ERROR",
+    "service": "mobile-app-backend",
+    "message": "Certificate pinning failure — mobile clients unable to connect",
+    "metadata": {}
+  },
+  {
+    "timestamp": "2025-06-01T00:45:00Z",
+    "level": "INFO",
+    "service": "nginx",
+    "message": "New SSL certificate installed for api.example.com",
+    "metadata": {
+      "new_expiry": "2026-06-01T00:00:00Z"
+    }
+  },
+  {
+    "timestamp": "2025-06-01T00:46:00Z",
+    "level": "INFO",
+    "service": "nginx",
+    "message": "TLS handshakes succeeding — traffic restored",
+    "metadata": {}
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "sha": "mig001",
+    "timestamp": "2025-09-14T15:00:00Z",
+    "author": "Jake Brown",
+    "message": "feat: add order status tracking — schema migrations",
+    "files_changed": [
+      "migrations/042_add_status_column.sql",
+      "migrations/043_backfill_status.sql",
+      "migrations/044_compute_status_function.sql"
+    ],
+    "diff_summary": "Three migrations: 042 adds status column, 043 backfills existing rows using compute_status(), 044 creates the compute_status() function. BUG: 043 references function from 044 but runs before it."
+  }
+]

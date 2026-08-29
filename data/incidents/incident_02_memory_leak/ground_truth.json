@@ -1,0 +1,44 @@
+{
+  "root_cause": "The 'enable_extended_cache' feature flag was enabled in production without eviction policies (TTL or max-size) on the extended cache. The cache grew unbounded, holding full ProductCatalog objects per tenant, until the service ran out of heap memory.",
+  "root_cause_category": "code_bug",
+  "contributing_factors": [
+    "Extended cache was a prototype without TTL or eviction — marked as TODO but shipped anyway",
+    "Feature flag was enabled in production after only 1 day in staging, which had fewer tenants and didn't surface the memory issue",
+    "No memory growth rate alerting — only triggered at 80% threshold, too late for gradual leaks",
+    "Kubernetes restart masked the problem temporarily, delaying diagnosis"
+  ],
+  "key_timeline_events": [
+    {
+      "timestamp": "2025-04-02T08:00:00Z",
+      "description": "Feature flag enabled in production"
+    },
+    {
+      "timestamp": "2025-04-02T14:00:00Z",
+      "description": "Memory at 60% and climbing steadily"
+    },
+    {
+      "timestamp": "2025-04-02T17:50:00Z",
+      "description": "Memory alert triggered at 80%"
+    },
+    {
+      "timestamp": "2025-04-02T18:10:00Z",
+      "description": "First OOMKill"
+    },
+    {
+      "timestamp": "2025-04-02T19:10:00Z",
+      "description": "Second OOMKill — pattern confirmed"
+    },
+    {
+      "timestamp": "2025-04-02T19:30:00Z",
+      "description": "Feature flag disabled"
+    },
+    {
+      "timestamp": "2025-04-02T19:35:00Z",
+      "description": "Memory stabilized — incident resolved"
+    }
+  ],
+  "severity": "SEV2",
+  "impact_summary": "~90 minutes of degraded service with two complete outage periods during OOMKill restarts. Product catalog API returned errors or timed out. Estimated ~5,000 affected requests.",
+  "resolution": "Disabled the 'enable_extended_cache' feature flag. Planned fix: add TTL and max-size eviction before re-enabling.",
+  "duration_minutes": 90
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "timestamp": "2025-06-15T06:00:10Z",
+    "severity": "critical",
+    "source": "PagerDuty",
+    "title": "DNS Resolution Failures",
+    "description": "Multiple services unable to resolve internal domain names."
+  },
+  {
+    "timestamp": "2025-06-15T06:38:00Z",
+    "severity": "info",
+    "source": "PagerDuty",
+    "title": "DNS Restored",
+    "description": "All internal DNS resolution working."
+  }
+]

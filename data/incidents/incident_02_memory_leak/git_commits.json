@@ -1,0 +1,43 @@
+[
+  {
+    "sha": "f1a2b3c",
+    "timestamp": "2025-03-28T10:00:00Z",
+    "author": "Lisa Wang",
+    "message": "feat: add extended product cache (behind feature flag)",
+    "files_changed": [
+      "src/cache/extended_cache.py",
+      "src/services/product_service.py"
+    ],
+    "diff_summary": "Added new ExtendedCache class that caches full ProductCatalog objects per tenant. No TTL or eviction policy implemented yet — marked as TODO. Gated behind 'enable_extended_cache' feature flag."
+  },
+  {
+    "sha": "d4e5f6g",
+    "timestamp": "2025-03-29T14:00:00Z",
+    "author": "Lisa Wang",
+    "message": "test: add basic tests for extended cache",
+    "files_changed": [
+      "tests/test_extended_cache.py"
+    ],
+    "diff_summary": "Added unit tests for cache insertion and retrieval. No tests for eviction (not implemented)."
+  },
+  {
+    "sha": "h7i8j9k",
+    "timestamp": "2025-04-01T16:00:00Z",
+    "author": "Priya Patel",
+    "message": "chore: enable extended cache flag in staging",
+    "files_changed": [
+      "config/feature_flags.yaml"
+    ],
+    "diff_summary": "Enabled enable_extended_cache in staging environment for testing."
+  },
+  {
+    "sha": "l0m1n2o",
+    "timestamp": "2025-04-02T07:55:00Z",
+    "author": "Priya Patel",
+    "message": "chore: enable extended cache flag in production",
+    "files_changed": [
+      "config/feature_flags.yaml"
+    ],
+    "diff_summary": "Enabled enable_extended_cache in production after 1 day of staging without issues. Note: staging has fewer tenants so memory impact was minimal."
+  }
+]

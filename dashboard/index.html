@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Prism — Incident Post-Mortems</title>
+    <meta name="description" content="Generate post-mortems from logs, commits, chat, and alerts.">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface": "var(--color-surface)",
+                        "surface-dim": "var(--color-surface-dim)",
+                        "surface-bright": "var(--color-surface-bright)",
+                        "surface-container-lowest": "var(--color-surface-container-lowest)",
+                        "surface-container-low": "var(--color-surface-container-low)",
+                        "surface-container": "var(--color-surface-container)",
+                        "surface-container-high": "var(--color-surface-container-high)",
+                        "surface-container-highest": "var(--color-surface-container-highest)",
+                        "on-surface": "var(--color-on-surface)",
+                        "on-surface-variant": "var(--color-on-surface-variant)",
+                        "inverse-surface": "var(--color-inverse-surface)",
+                        "inverse-on-surface": "var(--color-inverse-on-surface)",
+                        "outline": "var(--color-outline)",
+                        "outline-variant": "var(--color-outline-variant)",
+                        "surface-tint": "var(--color-surface-tint)",
+                        "primary": "var(--color-primary)",
+                        "on-primary": "var(--color-on-primary)",
+                        "primary-container": "var(--color-primary-container)",
+                        "on-primary-container": "var(--color-on-primary-container)",
+                        "inverse-primary": "var(--color-inverse-primary)",
+                        "secondary": "var(--color-secondary)",
+                        "on-secondary": "var(--color-on-secondary)",
+                        "secondary-container": "var(--color-secondary-container)",
+                        "on-secondary-container": "var(--color-on-secondary-container)",
+                        "tertiary": "var(--color-tertiary)",
+                        "on-tertiary": "var(--color-on-tertiary)",
+                        "tertiary-container": "var(--color-tertiary-container)",
+                        "on-tertiary-container": "var(--color-on-tertiary-container)",
+                        "error": "var(--color-error)",
+                        "on-error": "var(--color-on-error)",
+                        "error-container": "var(--color-error-container)",
+                        "on-error-container": "var(--color-on-error-container)",
+                        "background": "var(--color-background)",
+                        "on-background": "var(--color-on-background)",
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "sm": "0.125rem",
+                        "md": "0.375rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "unit": "4px",
+                        "container-margin": "32px",
+                        "gutter": "24px",
+                        "stack-sm": "8px",
+                        "stack-md": "16px",
+                        "stack-lg": "32px"
+                    },
+                    fontFamily: {
+                        "display-lg": ["Hanken Grotesk", "sans-serif"],
+                        "headline-lg": ["Hanken Grotesk", "sans-serif"],
+                        "headline-md": ["Hanken Grotesk", "sans-serif"],
+                        "headline-sm": ["Hanken Grotesk", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "label-md": ["Hanken Grotesk", "sans-serif"],
+                        "label-sm": ["Hanken Grotesk", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased h-screen overflow-hidden flex">
+
+<!-- ════════════════════ SIDEBAR NAVIGATION ════════════════════ -->
+<nav class="hidden md:flex fixed left-0 top-0 h-full flex-col py-stack-lg bg-surface-container-low border-r border-outline-variant w-64 z-50 select-none">
+    <!-- Brand Header & New Logo -->
+    <div class="px-gutter mb-stack-lg flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-lg bg-surface-container border border-primary/30 flex items-center justify-center shrink-0 shadow-sm">
+            <!-- Custom Geometric Prism Refraction Logo -->
+            <svg width="24" height="24" viewBox="0 0 32 32" fill="none" class="shrink-0">
+                <!-- Prism Triangle Body -->
+                <polygon points="16,4 28,26 4,26" fill="url(#prism-body-grad)" stroke="#b8c4ff" stroke-width="1.75" stroke-linejoin="round"/>
+                <!-- Internal facet -->
+                <polygon points="16,4 20,26 4,26" fill="#1e40af" fill-opacity="0.3"/>
+                <!-- Incident Light Ray -->
+                <line x1="2" y1="18" x2="11" y2="16" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+                <!-- Refracted Spectral Rays -->
+                <line x1="11" y1="16" x2="28" y2="13" stroke="#60a5fa" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+                <line x1="11" y1="16" x2="29" y2="18" stroke="#ffb95f" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+                <line x1="11" y1="16" x2="28" y2="23" stroke="#ffb59a" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+                <defs>
+                    <linearGradient id="prism-body-grad" x1="16" y1="4" x2="16" y2="26" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#1e40af" stop-opacity="0.4"/>
+                        <stop offset="1" stop-color="#060e20" stop-opacity="0.8"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+        <div>
+            <h1 class="font-headline-sm text-lg font-bold tracking-tight text-primary">Prism</h1>
+            <p class="font-label-sm text-[11px] tracking-wider uppercase text-on-surface-variant font-medium">Incident Review</p>
+        </div>
+    </div>
+
+    <!-- Navigation Links -->
+    <div class="flex-1 px-3 space-y-1.5" id="nav-items">
+        <a class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-primary bg-primary-container/10 border-l-2 border-primary font-label-md text-xs uppercase tracking-wider font-semibold transition-all duration-200 cursor-pointer" data-view="dashboard" onclick="nav('dashboard')">
+            <span class="material-symbols-outlined text-[20px]">dashboard</span>
+            Incidents
+        </a>
+        <a class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high border-l-2 border-transparent font-label-md text-xs uppercase tracking-wider font-semibold transition-all duration-200 cursor-pointer" data-view="new" onclick="nav('new')">
+            <span class="material-symbols-outlined text-[20px]">add_circle</span>
+            New Incident
+        </a>
+        <a class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high border-l-2 border-transparent font-label-md text-xs uppercase tracking-wider font-semibold transition-all duration-200 cursor-pointer" data-view="integrations" onclick="nav('integrations')">
+            <span class="material-symbols-outlined text-[20px]">extension</span>
+            Integrations
+        </a>
+        <a class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant/70 hover:text-on-surface hover:bg-surface-container-high border-l-2 border-transparent font-label-md text-xs uppercase tracking-wider font-medium transition-all duration-200 cursor-pointer" onclick="window.open('/docs', '_blank')">
+            <span class="material-symbols-outlined text-[20px]">api</span>
+            API Docs
+        </a>
+    </div>
+
+    <!-- System Status & Counts -->
+    <div class="px-gutter mt-auto pt-4 border-t border-[#1E293B]/60 space-y-3">
+        <div class="flex items-center justify-between text-xs font-label-sm uppercase tracking-wider text-on-surface-variant">
+            <span>Status</span>
+            <span class="inline-flex items-center gap-1.5 text-primary">
+                <span class="w-2 h-2 rounded-full bg-primary pulse-dot"></span> Operational
+            </span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-center bg-surface-container p-2.5 rounded border border-[#1E293B]">
+            <div>
+                <span class="block text-base font-bold text-on-surface font-headline-sm" id="total-incidents">0</span>
+                <span class="text-[10px] uppercase font-label-sm text-on-surface-variant/80 tracking-wider">Total</span>
+            </div>
+            <div>
+                <span class="block text-base font-bold text-on-surface font-headline-sm" id="total-reports">0</span>
+                <span class="text-[10px] uppercase font-label-sm text-on-surface-variant/80 tracking-wider">Reports</span>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ════════════════════ MAIN CONTENT CANVAS ════════════════════ -->
+<div class="flex-1 flex flex-col md:ml-64 h-full overflow-hidden">
+    <!-- Top Header -->
+    <header class="w-full h-16 bg-surface border-b border-outline-variant flex justify-between items-center px-container-margin shrink-0 select-none">
+        <div class="flex items-center gap-3">
+            <h2 class="font-headline-md text-xl font-semibold text-on-surface" id="view-title">Incidents</h2>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="nav('new')" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded text-xs font-semibold uppercase tracking-wider bg-primary-container hover:bg-primary-container/80 text-on-surface transition-all active:scale-95 border border-primary/30">
+                <span class="material-symbols-outlined text-[16px]">add</span>
+                New Incident
+            </button>
+            <div class="h-4 w-px bg-outline-variant"></div>
+            <button onclick="loadList(); toast('Data refreshed', 'ok')" class="w-9 h-9 rounded hover:bg-surface-container-high transition-colors flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-95 border border-transparent hover:border-[#1E293B]">
+                <span class="material-symbols-outlined text-[19px]">refresh</span>
+            </button>
+            <button onclick="toggleTheme()" class="w-9 h-9 rounded hover:bg-surface-container-high transition-colors flex items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-95 border border-transparent hover:border-[#1E293B]">
+                <span class="material-symbols-outlined text-[19px]" id="theme-btn-icon">light_mode</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Canvas Scrollable Area -->
+    <main class="flex-1 overflow-y-auto p-container-margin">
+        <div class="max-w-[1440px] mx-auto w-full">
+
+            <!-- ════════════ VIEW: DASHBOARD ════════════ -->
+            <section class="page-view active space-y-gutter" id="page-dashboard">
+                <!-- Summary Metrics Row -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+                    <!-- Metric 1 -->
+                    <div class="bg-surface border border-[#1E293B] rounded-lg p-6 flex flex-col justify-between">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="font-label-md text-xs uppercase tracking-wider text-on-surface-variant font-semibold">Total Incidents</span>
+                            <span class="material-symbols-outlined text-primary text-[20px]">folder</span>
+                        </div>
+                        <div class="flex items-end gap-3">
+                            <span class="font-display-lg text-4xl font-semibold text-on-surface" id="stat-total">0</span>
+                            <span class="font-body-md text-xs text-on-surface-variant mb-1 font-medium">Logged</span>
+                        </div>
+                    </div>
+                    <!-- Metric 2 -->
+                    <div class="bg-surface border border-[#1E293B] rounded-lg p-6 flex flex-col justify-between">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="font-label-md text-xs uppercase tracking-wider text-on-surface-variant font-semibold">Reports Generated</span>
+                            <span class="material-symbols-outlined text-primary text-[20px]">assignment_turned_in</span>
+                        </div>
+                        <div class="flex items-end gap-3">
+                            <span class="font-display-lg text-4xl font-semibold text-on-surface" id="stat-reports">0</span>
+                            <span class="font-body-md text-xs text-primary mb-1 font-medium">Reports Ready</span>
+                        </div>
+                    </div>
+                    <!-- Metric 3 -->
+                    <div class="bg-surface border border-[#1E293B] rounded-lg p-6 flex flex-col justify-between">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="font-label-md text-xs uppercase tracking-wider text-on-surface-variant font-semibold">Running</span>
+                            <span class="material-symbols-outlined text-secondary text-[20px]">sync</span>
+                        </div>
+                        <div class="flex items-end gap-3">
+                            <span class="font-display-lg text-4xl font-semibold text-on-surface" id="stat-running">0</span>
+                            <span class="font-body-md text-xs text-on-surface-variant mb-1 font-medium" id="stat-running-sub">Active Runs</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2-Column Split: Incidents Table (Left) + Quality Metrics (Right) -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+                    <!-- Left Column (8-col) -->
+                    <div class="lg:col-span-8 flex flex-col gap-gutter">
+                        <div class="bg-surface border border-[#1E293B] rounded-lg flex flex-col">
+                            <div class="px-6 py-4 border-b border-[#1E293B] flex justify-between items-center">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="material-symbols-outlined text-primary text-[18px]">format_list_bulleted</span>
+                                    <h3 class="font-headline-sm text-base font-semibold text-on-surface">Recent Incidents</h3>
+                                </div>
+                                <button onclick="nav('new')" class="font-label-md text-xs uppercase tracking-wider text-primary hover:text-primary-fixed transition-colors font-semibold flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[14px]">add</span> New Incident
+                                </button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="border-b border-[#1E293B] bg-surface-container-low/50">
+                                            <th class="px-6 py-3 font-label-md text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Sev</th>
+                                            <th class="px-6 py-3 font-label-md text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Incident</th>
+                                            <th class="px-6 py-3 font-label-md text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Report Availability</th>
+                                            <th class="px-6 py-3 font-label-md text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="font-body-md text-sm" id="incidents-table-body">
+                                        <!-- Populated via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="empty-state" class="py-16 text-center px-4" style="display:none;">
+                                <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant border border-[#1E293B]">
+                                    <span class="material-symbols-outlined text-[24px]">inbox</span>
+                                </div>
+                                <h4 class="font-headline-sm text-sm font-semibold text-on-surface mb-1">No Incidents Analyzed Yet</h4>
+                                <p class="text-xs text-on-surface-variant max-w-sm mx-auto mb-4">Provide logs, git commits, Slack messages or alerts to generate your first incident post-mortem.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column (4-col) -->
+                    <div class="lg:col-span-4 flex flex-col gap-gutter">
+                        <!-- Analysis Overview Card -->
+                        <div class="bg-surface border border-[#1E293B] rounded-lg p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-headline-sm text-sm font-semibold text-on-surface uppercase tracking-wider">Analysis Overview</h3>
+                                <span class="text-[11px] font-mono text-primary">Engine</span>
+                            </div>
+                            <div class="space-y-3 pt-1">
+                                <div class="bg-surface-container-low p-3 rounded border border-[#1E293B]/60 flex items-center justify-between">
+                                    <div>
+                                        <span class="text-on-surface-variant block text-[11px] font-semibold uppercase tracking-wider">Analysis Pipeline</span>
+                                        <span class="text-xs text-on-surface-variant">Multi-source correlation engine</span>
+                                    </div>
+                                    <span class="font-bold text-primary font-mono text-xs">Ready</span>
+                                </div>
+                                <div class="bg-surface-container-low p-3 rounded border border-[#1E293B]/60 flex items-center justify-between">
+                                    <div>
+                                        <span class="text-on-surface-variant block text-[11px] font-semibold uppercase tracking-wider">Forensic Diff Engine</span>
+                                        <span class="text-xs text-on-surface-variant">Code diff & root cause detection</span>
+                                    </div>
+                                    <span class="font-bold text-on-surface font-mono text-xs">Active</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Connected Collectors Card -->
+                        <div class="bg-surface border border-[#1E293B] rounded-lg p-6 flex-1 flex flex-col">
+                            <h3 class="font-headline-sm text-sm font-semibold text-on-surface uppercase tracking-wider mb-4">Connected Sources</h3>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex items-center justify-between p-2.5 rounded bg-surface-container-low border border-[#1E293B]">
+                                    <span class="flex items-center gap-2 text-on-surface"><span class="material-symbols-outlined text-[16px] text-primary">code</span> GitHub</span>
+                                    <span class="text-[10px] font-mono text-primary">Active</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2.5 rounded bg-surface-container-low border border-[#1E293B]">
+                                    <span class="flex items-center gap-2 text-on-surface"><span class="material-symbols-outlined text-[16px] text-secondary">chat</span> Slack Threads</span>
+                                    <span class="text-[10px] font-mono text-primary">Active</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2.5 rounded bg-surface-container-low border border-[#1E293B]">
+                                    <span class="flex items-center gap-2 text-on-surface"><span class="material-symbols-outlined text-[16px] text-error">warning</span> PagerDuty / Alerts</span>
+                                    <span class="text-[10px] font-mono text-primary">Active</span>
+                                </div>
+                                <div class="flex items-center justify-between p-2.5 rounded bg-surface-container-low border border-[#1E293B]">
+                                    <span class="flex items-center gap-2 text-on-surface"><span class="material-symbols-outlined text-[16px] text-on-surface-variant">description</span> Application Logs</span>
+                                    <span class="text-[10px] font-mono text-primary">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ════════════ VIEW: NEW INCIDENT ════════════ -->
+            <section class="page-view space-y-gutter" id="page-new" style="display:none;">
+                <form id="incident-form" onsubmit="handleCreate(event)" class="space-y-6">
+                    <!-- Step 1: Details -->
+                    <div class="bg-surface border border-[#1E293B] rounded-lg p-6">
+                        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-[#1E293B]">
+                            <span class="w-7 h-7 rounded bg-primary-container text-on-surface flex items-center justify-center text-xs font-bold font-mono">1</span>
+                            <div>
+                                <h3 class="font-headline-sm text-base font-semibold text-on-surface">Incident Details</h3>
+                                <p class="text-xs text-on-surface-variant">Title, severity, and time window</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-3 space-y-1.5">
+                                <label class="font-label-md text-xs uppercase tracking-wider font-semibold text-on-surface-variant">Incident Title *</label>
+                                <input type="text" id="f-title" placeholder="e.g., Database connection pool exhaustion during peak traffic" required
+                                       class="w-full bg-surface-container-low border border-[#1E293B] rounded px-3.5 py-2 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="font-label-md text-xs uppercase tracking-wider font-semibold text-on-surface-variant">Severity</label>
+                                <select id="f-sev" class="w-full bg-surface-container-low border border-[#1E293B] rounded px-3.5 py-2 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors">
+                                    <option value="P0">P0 — Outage / Critical</option>
+                                    <option value="P1">P1 — Major Service Degradation</option>
+                                    <option value="P2" selected>P2 — Moderate Impact</option>
+                                    <option value="P3">P3 — Minor</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="font-label-md text-xs uppercase tracking-wider font-semibold text-on-surface-variant">Incident Time</label>
+                                <input type="datetime-local" id="f-time" class="w-full bg-surface-container-low border border-[#1E293B] rounded px-3.5 py-2 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="font-label-md text-xs uppercase tracking-wider font-semibold text-on-surface-variant">Lookback Window</label>
+                                <select id="f-window" class="w-full bg-surface-container-low border border-[#1E293B] rounded px-3.5 py-2 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors">
+                                    <option value="6">6 Hours</option>
+                                    <option value="12">12 Hours</option>
+                                    <option value="24" selected>24 Hours</option>
+                                    <option value="48">48 Hours</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Data Sources -->
+                    <div class="bg-surface border border-[#1E293B] rounded-lg p-6 space-y-6">
+                        <div class="flex items-center justify-between pb-4 border-b border-[#1E293B]">
+                            <div class="flex items-center gap-3">
+                                <span class="w-7 h-7 rounded bg-primary-container text-on-surface flex items-center justify-center text-xs font-bold font-mono">2</span>
+                                <div>
+                                    <h3 class="font-headline-sm text-base font-semibold text-on-surface">Data Sources</h3>
+                                    <p class="text-xs text-on-surface-variant">Connect your tools or paste data directly (all optional)</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- GitHub -->
+                        <div class="p-4 bg-surface-container-low/60 rounded border border-[#1E293B] space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2.5 text-sm font-semibold text-on-surface">
+                                    <span class="material-symbols-outlined text-primary text-[18px]">code</span>
+                                    <span>GitHub Repository</span>
+                                </div>
+                                <span class="text-xs text-primary font-mono" id="github-status"></span>
+                            </div>
+                            <input type="text" id="f-repo" placeholder="https://github.com/org/repo"
+                                   class="w-full bg-surface-container border border-[#1E293B] rounded px-3.5 py-2 text-xs font-mono text-on-surface focus:outline-none focus:border-primary transition-colors">
+                        </div>
+
+                        <!-- Application Logs -->
+                        <div class="p-4 bg-surface-container-low/60 rounded border border-[#1E293B] space-y-3">
+                            <div class="flex items-center gap-2.5 text-sm font-semibold text-on-surface">
+                                <span class="material-symbols-outlined text-primary text-[18px]">description</span>
+                                <span>Application Logs</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <label class="border-2 border-dashed border-[#1E293B] hover:border-primary/50 bg-surface-container/50 rounded p-4 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-1.5">
+                                    <input type="file" id="f-logfile" accept=".json,.jsonl,.log,.txt,.csv" class="hidden" onchange="filePick(this,'log-preview')">
+                                    <span class="material-symbols-outlined text-on-surface-variant text-[22px]">upload_file</span>
+                                    <span class="text-xs font-medium text-on-surface-variant">Upload log file (.jsonl, .log, .txt)</span>
+                                    <span class="text-[11px] text-primary font-mono" id="log-preview"></span>
+                                </label>
+                                <textarea id="f-logs" rows="3" placeholder='Or paste raw logs here (JSON, JSONL, or plain text)...'
+                                          class="w-full bg-surface-container border border-[#1E293B] rounded p-3 text-xs font-mono text-on-surface focus:outline-none focus:border-primary transition-colors"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Slack & Alerts Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Incident Chat -->
+                            <div class="p-4 bg-surface-container-low/60 rounded border border-[#1E293B] space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2.5 text-sm font-semibold text-on-surface">
+                                        <span class="material-symbols-outlined text-secondary text-[18px]">chat</span>
+                                        <span>Slack Incident Thread</span>
+                                    </div>
+                                    <span class="text-xs text-primary font-mono" id="slack-status"></span>
+                                </div>
+                                <textarea id="f-chat" rows="3" placeholder="[14:30] Sarah (SRE): DB connection pool exhausted&#10;[14:32] Mike: Released v2.14 thirty minutes ago..."
+                                          class="w-full bg-surface-container border border-[#1E293B] rounded p-3 text-xs font-mono text-on-surface focus:outline-none focus:border-primary transition-colors"></textarea>
+                            </div>
+                            <!-- Monitoring Alerts -->
+                            <div class="p-4 bg-surface-container-low/60 rounded border border-[#1E293B] space-y-3">
+                                <div class="flex items-center gap-2.5 text-sm font-semibold text-on-surface">
+                                    <span class="material-symbols-outlined text-error text-[18px]">warning</span>
+                                    <span>Monitoring Alerts</span>
+                                </div>
+                                <textarea id="f-alerts" rows="3" placeholder='[{"timestamp":"2025-03-15T14:28:00Z","severity":"critical","title":"Service error rate > 5%"}]'
+                                          class="w-full bg-surface-container border border-[#1E293B] rounded p-3 text-xs font-mono text-on-surface focus:outline-none focus:border-primary transition-colors"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Action -->
+                    <div class="flex justify-end gap-3 pt-2">
+                        <button type="button" onclick="nav('dashboard')" class="px-5 py-2.5 rounded border border-[#1E293B] hover:bg-surface-container text-xs font-semibold uppercase tracking-wider text-on-surface-variant transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" id="submit-btn" class="px-6 py-2.5 rounded bg-primary-container hover:bg-primary-container/80 text-on-surface text-xs font-semibold uppercase tracking-wider transition-all active:scale-95 border border-primary/30 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                            Generate Post-Mortem
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- ════════════ VIEW: PIPELINE PROGRESS ════════════ -->
+            <section class="page-view space-y-gutter" id="page-pipeline" style="display:none;">
+                <div class="bg-surface border border-[#1E293B] rounded-lg p-10 max-w-2xl mx-auto text-center space-y-8">
+                    <div>
+                        <span class="font-label-sm text-xs font-mono uppercase tracking-widest text-primary block mb-1">Running Report Generator</span>
+                        <h2 class="font-headline-md text-2xl font-bold text-on-surface" id="pipe-title">Analyzing Incident</h2>
+                        <p class="text-xs text-on-surface-variant mt-1" id="pipe-phase">Collecting data from connected sources...</p>
+                    </div>
+
+                    <!-- Ring & Progress -->
+                    <div class="relative w-40 h-40 mx-auto flex items-center justify-center">
+                        <svg class="w-full h-full" viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r="52" fill="none" stroke="#1E293B" stroke-width="6"/>
+                            <circle id="pipe-fill" cx="60" cy="60" r="52" fill="none" stroke="#b8c4ff" stroke-width="6" stroke-linecap="round"
+                                    stroke-dasharray="326.7" stroke-dashoffset="326.7" transform="rotate(-90 60 60)" class="transition-all duration-500"/>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="font-display-lg text-3xl font-bold text-on-surface font-mono" id="pipe-pct">0%</span>
+                            <span class="text-[10px] uppercase font-label-sm text-primary tracking-widest">Progress</span>
+                        </div>
+                    </div>
+
+                    <!-- Pipeline Steps -->
+                    <div class="space-y-2 max-w-md mx-auto text-left font-mono text-xs" id="pipe-steps-box">
+                        <div class="pipe-step flex items-center justify-between p-2.5 rounded bg-surface-container-low border border-[#1E293B]" data-t="5">
+                            <span class="flex items-center gap-2.5"><span class="w-2 h-2 rounded-full bg-outline"></span> 1. Ingesting sources</span>
+                            <span class="status-lbl text-on-surface-variant text-[11px]">Pending</span>
+                        </div>
+                        <div class="pipe-step flex items-center justify-between p-2.5 rounded bg-surface-container-low border border-[#1E293B]" data-t="20">
+                            <span class="flex items-center gap-2.5"><span class="w-2 h-2 rounded-full bg-outline"></span> 2. Analyzing system logs</span>
+                            <span class="status-lbl text-on-surface-variant text-[11px]">Pending</span>
+                        </div>
+                        <div class="pipe-step flex items-center justify-between p-2.5 rounded bg-surface-container-low border border-[#1E293B]" data-t="35">
+                            <span class="flex items-center gap-2.5"><span class="w-2 h-2 rounded-full bg-outline"></span> 3. Scanning chat threads</span>
+                            <span class="status-lbl text-on-surface-variant text-[11px]">Pending</span>
+                        </div>
+                        <div class="pipe-step flex items-center justify-between p-2.5 rounded bg-surface-container-low border border-[#1E293B]" data-t="50">
+                            <span class="flex items-center gap-2.5"><span class="w-2 h-2 rounded-full bg-outline"></span> 4. Scanning git commits</span>
+                            <span class="status-lbl text-on-surface-variant text-[11px]">Pending</span>
+                        </div>
+                        <div class="pipe-step flex items-center justify-between p-2.5 rounded bg-surface-container-low border border-[#1E293B]" data-t="65">
+                            <span class="flex items-center gap-2.5"><span class="w-2 h-2 rounded-full bg-outline"></span> 5. Constructing incident timeline</span>
+                            <span class="status-lbl text-on-surface-variant text-[11px]">Pending</span>
+                        </div>
+                        <div class="pipe-step flex items-center justify-between p-2.5 rounded bg-surface-container-low border border-[#1E293B]" data-t="75">
+                            <span class="flex items-center gap-2.5"><span class="w-2 h-2 rounded-full bg-outline"></span> 6. Investigating root cause</span>
+                            <span class="status-lbl text-on-surface-variant text-[11px]">Pending</span>
+                        </div>
+                        <div class="pipe-step flex items-center justify-between p-2.5 rounded bg-surface-container-low border border-[#1E293B]" data-t="90">
+                            <span class="flex items-center gap-2.5"><span class="w-2 h-2 rounded-full bg-outline"></span> 7. Compiling post-mortem report</span>
+                            <span class="status-lbl text-on-surface-variant text-[11px]">Pending</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ════════════ VIEW: REPORT ════════════ -->
+            <section class="page-view space-y-gutter" id="page-report" style="display:none;">
+                <div class="bg-surface border border-[#1E293B] rounded-lg p-6">
+                    <div class="flex justify-between items-start pb-6 border-b border-[#1E293B]">
+                        <div>
+                            <button onclick="nav('dashboard')" class="inline-flex items-center gap-1 text-xs font-label-md uppercase tracking-wider text-primary hover:text-primary-fixed mb-2 font-semibold">
+                                <span class="material-symbols-outlined text-[16px]">arrow_back</span> Back to Incidents
+                            </button>
+                            <h2 class="font-headline-lg text-2xl font-bold text-on-surface" id="rpt-title">Incident Report</h2>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="copyRpt()" class="px-3.5 py-2 rounded bg-surface-container border border-[#1E293B] hover:border-primary text-xs font-semibold uppercase tracking-wider text-on-surface flex items-center gap-1.5 transition-all">
+                                <span class="material-symbols-outlined text-[16px]">content_copy</span> Copy Markdown
+                            </button>
+                            <button onclick="toast('Slack payload ready for export', 'info')" class="px-3.5 py-2 rounded bg-primary-container text-xs font-semibold uppercase tracking-wider text-on-surface hover:bg-primary-container/80 transition-all flex items-center gap-1.5 border border-primary/30">
+                                <span class="material-symbols-outlined text-[16px]">send</span> Export to Slack
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Badges -->
+                    <div class="flex flex-wrap gap-2.5 py-4 border-b border-[#1E293B]" id="rpt-meta">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <!-- Report Markdown Content -->
+                    <article class="prose-report py-6 text-on-surface/90" id="rpt-body">
+                        <!-- Rendered Markdown -->
+                    </article>
+                </div>
+            </section>
+
+            <!-- ════════════ VIEW: INTEGRATIONS ════════════ -->
+            <section class="page-view space-y-gutter" id="page-integrations" style="display:none;">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+                    <!-- GitHub -->
+                    <div class="bg-surface border border-[#1E293B] rounded-lg p-6 flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-3">
+                                <div class="flex items-center gap-2 text-primary font-bold">
+                                    <span class="material-symbols-outlined text-[20px]">code</span> GitHub
+                                </div>
+                                <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-surface-container border border-[#1E293B]" id="github-badge">Unconfigured</span>
+                            </div>
+                            <p class="text-xs text-on-surface-variant mb-4">Pull recent commits, PR diffs, and deploy history.</p>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-[10px] uppercase font-mono text-on-surface-variant block mb-1">Repository URL</label>
+                                    <input type="text" id="int-github-repo" placeholder="https://github.com/org/repo"
+                                           class="w-full bg-surface-container-low border border-[#1E293B] rounded px-3 py-1.5 text-xs font-mono text-on-surface focus:outline-none focus:border-primary">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] uppercase font-mono text-on-surface-variant block mb-1">Personal Access Token</label>
+                                    <input type="password" id="int-github-token" placeholder="ghp_..."
+                                           class="w-full bg-surface-container-low border border-[#1E293B] rounded px-3 py-1.5 text-xs font-mono text-on-surface focus:outline-none focus:border-primary">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 pt-2">
+                            <button onclick="saveInt('github')" class="flex-1 py-1.5 rounded bg-primary-container text-xs font-semibold uppercase tracking-wider text-on-surface hover:bg-primary-container/80 transition-all border border-primary/30">Save & Test</button>
+                            <button onclick="testInt('github')" class="px-3 py-1.5 rounded bg-surface-container border border-[#1E293B] hover:border-primary text-xs font-semibold text-on-surface-variant">Test</button>
+                        </div>
+                    </div>
+
+                    <!-- Slack -->
+                    <div class="bg-surface border border-[#1E293B] rounded-lg p-6 flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-3">
+                                <div class="flex items-center gap-2 text-secondary font-bold">
+                                    <span class="material-symbols-outlined text-[20px]">chat</span> Slack
+                                </div>
+                                <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-surface-container border border-[#1E293B]" id="slack-badge">Unconfigured</span>
+                            </div>
+                            <p class="text-xs text-on-surface-variant mb-4">Pull thread replies & decisions from incident channels.</p>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-[10px] uppercase font-mono text-on-surface-variant block mb-1">Bot OAuth Token</label>
+                                    <input type="password" id="int-slack-token" placeholder="xoxb-..."
+                                           class="w-full bg-surface-container-low border border-[#1E293B] rounded px-3 py-1.5 text-xs font-mono text-on-surface focus:outline-none focus:border-primary">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] uppercase font-mono text-on-surface-variant block mb-1">Default Incident Channel ID</label>
+                                    <input type="text" id="int-slack-channel" placeholder="C01234ABCDE"
+                                           class="w-full bg-surface-container-low border border-[#1E293B] rounded px-3 py-1.5 text-xs font-mono text-on-surface focus:outline-none focus:border-primary">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 pt-2">
+                            <button onclick="saveInt('slack')" class="flex-1 py-1.5 rounded bg-primary-container text-xs font-semibold uppercase tracking-wider text-on-surface hover:bg-primary-container/80 transition-all border border-primary/30">Save & Test</button>
+                            <button onclick="testInt('slack')" class="px-3 py-1.5 rounded bg-surface-container border border-[#1E293B] hover:border-primary text-xs font-semibold text-on-surface-variant">Test</button>
+                        </div>
+                    </div>
+
+                    <!-- PagerDuty -->
+                    <div class="bg-surface border border-[#1E293B] rounded-lg p-6 flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-3">
+                                <div class="flex items-center gap-2 text-error font-bold">
+                                    <span class="material-symbols-outlined text-[20px]">notifications_active</span> PagerDuty
+                                </div>
+                                <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-surface-container border border-[#1E293B]" id="pagerduty-badge">Unconfigured</span>
+                            </div>
+                            <p class="text-xs text-on-surface-variant mb-4">Auto-generate reports when incidents are resolved.</p>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-[10px] uppercase font-mono text-on-surface-variant block mb-1">REST API Key</label>
+                                    <input type="password" id="int-pd-apikey" placeholder="u+..."
+                                           class="w-full bg-surface-container-low border border-[#1E293B] rounded px-3 py-1.5 text-xs font-mono text-on-surface focus:outline-none focus:border-primary">
+                                </div>
+                                <div class="p-2.5 bg-surface-container-low rounded border border-[#1E293B] text-[11px]">
+                                    <span class="text-on-surface-variant block mb-1 font-mono uppercase text-[10px]">Webhook URL:</span>
+                                    <code class="text-primary break-all font-mono select-all text-[11px]" id="pd-webhook-url">/webhooks/pagerduty</code>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 pt-2">
+                            <button onclick="saveInt('pagerduty')" class="flex-1 py-1.5 rounded bg-primary-container text-xs font-semibold uppercase tracking-wider text-on-surface hover:bg-primary-container/80 transition-all border border-primary/30">Save & Test</button>
+                            <button onclick="testInt('pagerduty')" class="px-3 py-1.5 rounded bg-surface-container border border-[#1E293B] hover:border-primary text-xs font-semibold text-on-surface-variant">Test</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+</div>
+
+<!-- Toast Notifications -->
+<div class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none" id="toasts"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

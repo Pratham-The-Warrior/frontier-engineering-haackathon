@@ -1,0 +1,13 @@
+[
+  {
+    "sha": "rate001",
+    "timestamp": "2025-08-20T10:25:00Z",
+    "author": "Kim Park",
+    "message": "hotfix: split email queues — dedicated transactional queue",
+    "files_changed": [
+      "src/services/email_service.py",
+      "config/email_queues.yaml"
+    ],
+    "diff_summary": "Created separate queues for transactional and marketing emails. Transactional queue gets priority and reserved SendGrid quota. Marketing queue throttled to 100/min."
+  }
+]

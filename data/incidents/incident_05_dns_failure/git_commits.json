@@ -1,0 +1,13 @@
+[
+  {
+    "sha": "dns001",
+    "timestamp": "2025-06-14T16:00:00Z",
+    "author": "Tom Chen",
+    "message": "infra: prepare DNS migration to Cloudflare",
+    "files_changed": [
+      "infra/dns/migration_plan.md",
+      "infra/dns/cloudflare_zones.tf"
+    ],
+    "diff_summary": "Terraform config for Cloudflare DNS zones. Includes public zones (example.com, api.example.com) but missing internal zone (example.internal). Migration plan document also doesn't mention internal zones."
+  }
+]

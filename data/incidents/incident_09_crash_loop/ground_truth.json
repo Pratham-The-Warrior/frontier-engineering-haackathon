@@ -1,0 +1,40 @@
+{
+  "root_cause": "The new /healthz endpoint performed a database connectivity check and was configured as the Kubernetes liveness probe without an initialDelaySeconds. The DB connection pool takes ~15 seconds to initialize, but the liveness probe started checking immediately on pod start, failed 3 times, and Kubernetes restarted the pod — creating a CrashLoopBackOff since the pod could never pass the liveness check during startup.",
+  "root_cause_category": "configuration",
+  "contributing_factors": [
+    "DB connectivity check was used as liveness probe instead of readiness probe",
+    "No initialDelaySeconds configured on the liveness probe",
+    "No Kubernetes health check review process for new deployments",
+    "Staging environment had faster DB startup so the issue didn't surface there"
+  ],
+  "key_timeline_events": [
+    {
+      "timestamp": "2025-09-01T14:00:00Z",
+      "description": "Deploy v4.1.0 with new health check"
+    },
+    {
+      "timestamp": "2025-09-01T14:02:35Z",
+      "description": "Liveness probe fails — DB not ready during startup"
+    },
+    {
+      "timestamp": "2025-09-01T14:04:00Z",
+      "description": "CrashLoopBackOff — authentication unavailable"
+    },
+    {
+      "timestamp": "2025-09-01T14:06:00Z",
+      "description": "Root cause identified"
+    },
+    {
+      "timestamp": "2025-09-01T14:15:00Z",
+      "description": "Hotfix deployed — proper probe configuration"
+    },
+    {
+      "timestamp": "2025-09-01T14:16:00Z",
+      "description": "Auth service recovered"
+    }
+  ],
+  "severity": "SEV1",
+  "impact_summary": "12 minutes of complete authentication outage. No users could log in or authenticate API requests. All authenticated endpoints affected.",
+  "resolution": "Changed liveness probe to simple process check, moved DB check to readiness probe, added initialDelaySeconds=30.",
+  "duration_minutes": 12
+}

@@ -1,0 +1,40 @@
+{
+  "root_cause": "Log rotation was disabled on the data pipeline server for a debugging investigation 5 days prior and never re-enabled. Logs accumulated to 180GB, filling the disk completely and halting the pipeline.",
+  "root_cause_category": "configuration",
+  "contributing_factors": [
+    "Config change to disable log rotation was committed without a corresponding revert ticket or reminder",
+    "Disk usage alerts at 75% and 90% were not acted upon — treated as non-urgent",
+    "No automated policy to prevent log rotation from being disabled for more than 24 hours",
+    "Debugging investigation concluded but the config revert was forgotten"
+  ],
+  "key_timeline_events": [
+    {
+      "timestamp": "2025-08-05T02:00:00Z",
+      "description": "Log rotation disabled for debugging"
+    },
+    {
+      "timestamp": "2025-08-08T14:00:00Z",
+      "description": "75% disk warning — not acted on"
+    },
+    {
+      "timestamp": "2025-08-10T06:00:00Z",
+      "description": "90% disk warning — not acted on"
+    },
+    {
+      "timestamp": "2025-08-10T09:15:00Z",
+      "description": "Disk full — pipeline halts"
+    },
+    {
+      "timestamp": "2025-08-10T09:45:00Z",
+      "description": "Logs cleaned, rotation re-enabled"
+    },
+    {
+      "timestamp": "2025-08-10T09:50:00Z",
+      "description": "Pipeline resumed"
+    }
+  ],
+  "severity": "SEV2",
+  "impact_summary": "35 minutes of data pipeline downtime. No data loss, but downstream consumers experienced delayed data. Backlog processed within 2 hours.",
+  "resolution": "Cleaned old log files and re-enabled log rotation. Added automated policy to prevent rotation from being disabled for >24 hours.",
+  "duration_minutes": 35
+}
