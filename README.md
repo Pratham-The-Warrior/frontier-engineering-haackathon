@@ -7,10 +7,10 @@
 <p align="center">
   <a href="https://fastapi.tiangolo.com"><img src="https://img.shields.io/badge/FastAPI-0.110.0-009688.svg?style=for-the-badge&logo=fastapi" alt="FastAPI" /></a>
   <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.11+-3776AB.svg?style=for-the-badge&logo=python" alt="Python 3.11+" /></a>
+  <a href="https://drive.google.com/file/d/1thj3W2eXPpd3A0MRJmVI9hWeZl9a5g-Q/view?usp=sharing"><img src="https://img.shields.io/badge/Demo%20Video-Google%20Drive-ea4335.svg?style=for-the-badge&logo=google-drive" alt="Demo Video" /></a>
   <a href="#-reproduction--verification-guide"><img src="https://img.shields.io/badge/Tests-75%2F75%20Passed-10b981.svg?style=for-the-badge&logo=pytest" alt="Tests 75/75 Passed" /></a>
-  <a href="#-evaluation--measured-improvement"><img src="https://img.shields.io/badge/Benchmark-96.8%20vs%2066.8-6366f1.svg?style=for-the-badge" alt="Benchmark Score" /></a>
+  <a href="#-evaluation--measured-improvement"><img src="https://img.shields.io/badge/Benchmark-94.3%20vs%2036.7-6366f1.svg?style=for-the-badge" alt="Benchmark Score" /></a>
   <a href="#-coderabbit-grade-post-mortem-quality"><img src="https://img.shields.io/badge/Blameless%20Score-100%25-8b5cf6.svg?style=for-the-badge" alt="Blameless Score" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="License MIT" /></a>
 </p>
 
 > **Turn raw operational chaos into CodeRabbit-grade, executive-ready post-mortems with verified forensic code diffs in under 90 seconds.**
@@ -69,10 +69,6 @@ After every production outage, engineering teams face a painful operational bott
 ## 🌐 Interactive Web Dashboard & Live REST API (Port 8000)
 
 Prism includes a modern Single-Page Application (SPA) Web Dashboard and a high-performance FastAPI REST API:
-
-<p align="center">
-  <img src="prism_testing_demo.webp" alt="Prism Live Demo Animation" width="850" style="border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);" />
-</p>
 
 | Interface | Local URL | Description |
 |:---|:---|:---|
@@ -310,29 +306,29 @@ Run `python run_evaluation.py` to reproduce these benchmark results:
 
 | Incident ID | Incident Scenario | Simple Baseline Score | Prism Multi-Agent Score | Measured Improvement |
 |:---|:---|:---:|:---:|:---:|
-| **INC-001** | Database Connection Pool Exhaustion | `79.0 / 100` | `96.8 / 100` | **+17.8 pts** |
-| **INC-002** | Memory Leak in Caching Layer | `63.1 / 100` | `96.8 / 100` | **+33.7 pts** |
-| **INC-003** | Cascading Microservice Failure | `70.2 / 100` | `96.8 / 100` | **+26.6 pts** |
-| **INC-004** | SSL Certificate Expiry | `63.1 / 100` | `96.8 / 100` | **+33.7 pts** |
-| **INC-005** | DNS Resolution Provider Failure | `63.1 / 100` | `96.8 / 100` | **+33.7 pts** |
-| **INC-006** | Race Condition in Payment Processing | `63.1 / 100` | `96.8 / 100` | **+33.7 pts** |
-| **INC-007** | Disk Space Log Exhaustion | `63.1 / 100` | `96.8 / 100` | **+33.7 pts** |
-| **INC-008** | Third-Party API Rate Limit Cascade | `63.1 / 100` | `96.8 / 100` | **+33.7 pts** |
-| **INC-009** | Kubernetes Pod Crash Loop | `71.9 / 100` | `96.8 / 100` | **+24.9 pts** |
-| **INC-010** | Schema Migration Data Corruption | `63.1 / 100` | `96.8 / 100` | **+33.7 pts** |
-| **INC-011** | Mega Outage: Kafka Starvation | `71.9 / 100` | `96.8 / 100` | **+24.9 pts** |
-| **AVERAGE** | **Across All 11 Scenarios** | **`66.8 / 100`** | **`96.8 / 100`** | **`+30.0 pts (+44.9%)`** |
+| **INC-001** | Database Connection Pool Exhaustion | `44.5 / 100` | `95.0 / 100` | **+50.5 pts** |
+| **INC-002** | Memory Leak in Caching Layer | `36.0 / 100` | `92.5 / 100` | **+56.5 pts** |
+| **INC-003** | Cascading Microservice Failure | `40.8 / 100` | `94.1 / 100` | **+53.3 pts** |
+| **INC-004** | SSL Certificate Expiry | `36.2 / 100` | `100.0 / 100` | **+63.8 pts** |
+| **INC-005** | DNS Resolution Provider Failure | `36.2 / 100` | `96.2 / 100` | **+60.0 pts** |
+| **INC-006** | Race Condition in Payment Processing | `32.2 / 100` | `88.5 / 100` | **+56.3 pts** |
+| **INC-007** | Disk Space Log Exhaustion | `35.5 / 100` | `100.0 / 100` | **+64.5 pts** |
+| **INC-008** | Third-Party API Rate Limit Cascade | `32.2 / 100` | `96.0 / 100` | **+63.8 pts** |
+| **INC-009** | Kubernetes Pod Crash Loop | `38.8 / 100` | `100.0 / 100` | **+61.2 pts** |
+| **INC-010** | Schema Migration Data Corruption | `36.2 / 100` | `85.0 / 100` | **+48.8 pts** |
+| **INC-011** | Mega Outage: Kafka Starvation | `34.7 / 100` | `90.0 / 100` | **+55.3 pts** |
+| **AVERAGE** | **Across All 11 Scenarios** | **`36.7 / 100`** | **`94.3 / 100`** | **`+57.6 pts (+157.0%)`** |
 
 ### Detailed Metric Comparison
 
 | Evaluation Dimension | Weight | Simple Baseline | Prism Multi-Agent | Net Improvement |
 |:---|:---:|:---:|:---:|:---:|
-| **Root Cause Accuracy** | 30% | `50.0%` (Partial) | **`100.0%` (Exact)** | **+50.0%** |
-| **Timeline Event Recall** | 20% | `48.0%` | **`92.0%`** | **+44.0%** |
-| **Contributing Factors Recall** | 15% | `42.0%` | **`89.0%`** | **+47.0%** |
+| **Root Cause Accuracy** | 30% | `36.0%` (Partial) | **`100.0%` (Exact)** | **+64.0%** |
+| **Timeline Event Recall** | 20% | `41.0%` | **`95.0%`** | **+54.0%** |
+| **Contributing Factors Recall** | 15% | `32.0%` | **`82.0%`** | **+50.0%** |
 | **Blameless Culture Score** | 10% | `70.0 / 100` | **`100.0 / 100`** | **+30.0 pts** |
-| **Report Completeness** | 10% | `50.0 / 100` | **`100.0 / 100`** | **+50.0 pts** |
-| **Evidence Citation Density** | 15% | `0 verified tags` | **`24 verified tags`** | **100% Grounded** |
+| **Report Completeness** | 10% | `50.0 / 100` | **`98.0 / 100`** | **+48.0 pts** |
+| **Evidence Citation Density** | 15% | `0 verified tags` | **`30+ verified tags`** | **100% Grounded** |
 | **Human Time Required** | — | `4–8 hours` | **`< 90 seconds`** | **99% Reduction** |
 
 ---
@@ -343,7 +339,7 @@ The story of how the solution evolved from a naive single-prompt approach into a
 
 | Stage | What We Tried & Why | Evidence & Benchmark Impact | Decision / Learning |
 |:---|:---|:---|:---|
-| **Baseline** | Fed all raw data into a single monolithic prompt with standard instructions. | Baseline Score: **66.8/100**. Missed key timeline events; conflated correlation with causation; assigned personal blame. | Established starting point. |
+| **Baseline** | Fed all raw data into a single monolithic prompt with standard instructions. | Baseline Score: **36.7/100**. Missed key timeline events; conflated correlation with causation; assigned personal blame. | Established starting point. |
 | **Iteration 1** | Decomposed ingestion into 3 source-specific agents (Log Parser, Comms Analyzer, Git Analyzer). | Error signature extraction improved +40%; captured human triage decisions accurately. | **Kept.** Domain decomposition produces richer intermediate representations. |
 | **Iteration 2** | Built Timeline Builder agent with `IncidentContext` shared memory. | Timeline recall jumped from **48% $\to$ 92%**; cross-source causal links established. | **Kept.** Shared memory is the single most impactful architectural addition. |
 | **Iteration 3** | Added agentic verification loop & empirical evidence tools to Root Cause Analyzer. | False causal claims decreased by **~40%**; root cause accuracy reached **100%**. | **Kept.** Verification loops prevent hallucinated causation. |
@@ -500,7 +496,10 @@ micro1-hackathon/
 
 ## ⚖️ Ground Rules & Ethical Compliance
 
-1. **Controlled Actions:** Consequential actions (such as publishing tickets or modifying production alerts) require human review via CLI (`--interactive`) or the Web UI.
-2. **Responsible Data & Privacy:** Zero-trust secret scrubbing redacts all credentials, tokens, and PII in memory before ingestion. All incident datasets are synthetic and safe for public benchmarking.
-3. **Open Standards:** Built on open standards (FastAPI, Python 3.11+, Pydantic v2, Lucide Icons, Shields.io badges).
-4. **License:** MIT License. Built for the Micro1 Agentic Workflows Hackathon.
+1. **What Existed Before vs. What We Added:**
+   * **What Existed Before:** The initial boilerplate for log scenarios and the baseline evaluation template.
+   * **What We Added:** The entire 6-agent orchestration framework (`agents/`), the shared queryable memory context, the Temporal-Causal Incident Knowledge Graph (TCIKG) engine, the AST risk diff analyzer, the 100% blameless language checking utility, the zero-trust secret scrubber, the FastAPI integrations module (Jira API, Slack API, PagerDuty webhooks), and the modern dark-themed interactive SPA dashboard.
+2. **Controlled Actions:** Consequential actions (such as publishing tickets or modifying production alerts) require human review via CLI (`--interactive`) or the Web UI.
+3. **Responsible Data & Privacy:** Zero-trust secret scrubbing redacts all credentials, tokens, and PII in memory before ingestion. All incident datasets are synthetic and safe for public benchmarking.
+4. **Open Standards:** Built on open standards (FastAPI, Python 3.11+, Pydantic v2, Lucide Icons, Shields.io badges).
+5. **License:** MIT License. Built for the Micro1 Agentic Workflows Hackathon.

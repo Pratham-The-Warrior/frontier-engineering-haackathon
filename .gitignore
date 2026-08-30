@@ -32,3 +32,5 @@ Thumbs.db
 # Generated Output & Trajectories (optional, kept if committing gold samples)
 # output/
 # evaluation/results/
+submission.zip
+

@@ -1,5 +1,7 @@
 # Prism — Reproduction & Verification Guide
 
+> **Watch Demo Video:** [Google Drive Link](https://drive.google.com/file/d/1thj3W2eXPpd3A0MRJmVI9hWeZl9a5g-Q/view?usp=sharing)  
+
 Step-by-step instructions to reproduce all benchmarks, run tests, and launch the interactive web dashboard from a clean environment.
 
 ---
