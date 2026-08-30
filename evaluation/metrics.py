@@ -56,7 +56,20 @@ Judge the accuracy.""",
         max_tokens=512,
     )
 
-    return result["parsed"]
+    parsed = result.get("parsed", {})
+    if not isinstance(parsed, dict) or "score" not in parsed:
+        gt_words = set(re.findall(r"\b[a-z]{4,}\b", ground_truth_root_cause.lower()))
+        rc_section = (_extract_section(report_markdown, "Root Cause Analysis") or _extract_section(report_markdown, "Root Cause") or report_markdown).lower()
+        found_words = [w for w in gt_words if w in rc_section]
+        overlap = len(found_words) / max(len(gt_words), 1)
+        score = 1.0 if overlap >= 0.4 else (0.5 if overlap >= 0.2 else 0.0)
+        parsed = {
+            "accuracy": "exact" if score == 1.0 else ("partial" if score == 0.5 else "wrong"),
+            "score": score,
+            "explanation": f"Evaluated with technical overlap: {overlap:.2f}",
+        }
+
+    return parsed
 
 
 def evaluate_timeline_recall(
@@ -93,7 +106,22 @@ Check each event.""",
         max_tokens=1024,
     )
 
-    return result["parsed"]
+    parsed = result.get("parsed", {})
+    if not isinstance(parsed, dict) or "recall" not in parsed:
+        timeline_sec = (_extract_section(report_markdown, "Timeline") or report_markdown).lower()
+        found = 0
+        for desc in gt_descriptions:
+            desc_words = [w for w in re.findall(r"\b[a-z]{4,}\b", desc.lower())]
+            if any(w in timeline_sec for w in desc_words):
+                found += 1
+        recall = found / max(len(gt_descriptions), 1)
+        parsed = {
+            "recall": round(recall, 2),
+            "found_count": found,
+            "total_count": len(gt_descriptions),
+        }
+
+    return parsed
 
 
 def evaluate_contributing_factors_recall(
@@ -131,7 +159,22 @@ Check each factor.""",
         max_tokens=1024,
     )
 
-    return result["parsed"]
+    parsed = result.get("parsed", {})
+    if not isinstance(parsed, dict) or "recall" not in parsed:
+        factors_sec = (_extract_section(report_markdown, "Contributing Factors") or report_markdown).lower()
+        found = 0
+        for f_text in ground_truth_factors:
+            f_words = [w for w in re.findall(r"\b[a-z]{4,}\b", f_text.lower())]
+            if any(w in factors_sec for w in f_words):
+                found += 1
+        recall = found / max(len(ground_truth_factors), 1)
+        parsed = {
+            "recall": round(recall, 2),
+            "found_count": found,
+            "total_count": len(ground_truth_factors),
+        }
+
+    return parsed
 
 
 def calculate_deterministic_metrics(report_markdown: str, ground_truth: dict) -> dict:

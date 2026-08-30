@@ -446,6 +446,10 @@ MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
 MODEL_MINI = os.getenv("OPENAI_MODEL_MINI", "gpt-4o-mini")
 
 
+_last_call_time: float = 0.0
+_GEMINI_MIN_INTERVAL: float = 4.0  # 4 seconds between requests = ~10-15 req/min safe limit
+
+
 def call_llm(
     system_prompt: str,
     user_prompt: str,
@@ -453,11 +457,14 @@ def call_llm(
     temperature: float = 0.2,
     max_tokens: int = 4096,
     json_mode: bool = False,
-    retries: int = 2,
+    retries: int = 4,
 ) -> dict:
     """
     Call the LLM and return a structured result with trajectory metadata.
+    Includes rate-limiting for Gemini (max ~10-12 requests/min).
     """
+    global _last_call_time
+
     try:
         client = _get_client()
     except Exception:
@@ -469,8 +476,13 @@ def call_llm(
     model = model or MODEL
     if _client_provider == "gemini":
         if model in ("gpt-4o", "gpt-4o-mini", "mock-gpt-4o", "mock-gpt-4o-mini"):
-            gemini_model = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+            gemini_model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
             model = gemini_model
+
+        # Enforce rate limit (10-12 requests per minute max)
+        elapsed = time.time() - _last_call_time
+        if elapsed < _GEMINI_MIN_INTERVAL:
+            time.sleep(_GEMINI_MIN_INTERVAL - elapsed)
 
     messages = [
         {"role": "system", "content": system_prompt},
@@ -491,6 +503,7 @@ def call_llm(
         try:
             start = time.time()
             response = client.chat.completions.create(**kwargs)
+            _last_call_time = time.time()
             latency = time.time() - start
 
             content = response.choices[0].message.content or ""
@@ -510,8 +523,13 @@ def call_llm(
 
         except Exception as e:
             last_error = e
+            err_str = str(e).lower()
             if attempt < retries:
-                time.sleep(2 ** attempt)  # exponential backoff
+                # If rate limited (429 / ResourceExhausted), wait longer
+                if "429" in err_str or "resource_exhausted" in err_str or "quota" in err_str or "rate" in err_str:
+                    time.sleep(12 * (attempt + 1))
+                else:
+                    time.sleep(2 ** attempt)
 
     raise RuntimeError(f"LLM call failed after {retries + 1} attempts: {last_error}")
 
