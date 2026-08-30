@@ -486,10 +486,8 @@ micro1-hackathon/
 ├── run_baseline.py                 # CLI baseline execution runner
 ├── run_evaluation.py               # CLI benchmark comparison runner
 ├── CHANGELOG.md                    # Detailed evolutionary changelog
-├── DESIGN.md                       # Architectural design documentation
 ├── REPRODUCTION.md                 # Standalone clean reproduction guide
-├── TRAJECTORIES.md                 # Representative agent execution traces & tools
-└── VIDEO_GUIDE.md                  # 5-minute solution video script & walkthrough
+└── TRAJECTORIES.md                 # Representative agent execution traces & tools
 ```
 
 ---
