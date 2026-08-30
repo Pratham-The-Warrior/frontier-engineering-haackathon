@@ -42,15 +42,19 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure API key
+### 4. Configure API Key (Live LLM or Zero-Cost Offline Mode)
 ```bash
 cp .env.example .env
 ```
-Edit `.env` and set your OpenAI API key:
+Edit `.env` and set your preferred provider:
 ```env
-OPENAI_API_KEY=sk-your-actual-key-here
+# Option A: Google Gemini (gemini-3.6-flash)
+GEMINI_API_KEY=your-gemini-api-key-here
+
+# Option B: OpenAI (gpt-4o)
+OPENAI_API_KEY=sk-your-openai-api-key-here
 ```
-*(Note: If no API key is provided, the platform automatically utilizes its built-in realistic mock LLM fallback, allowing 100% offline testability).*
+*(Note: If no API key is provided, the platform automatically utilizes its built-in realistic mock LLM fallback, allowing judges and automated CI pipelines 100% offline evaluation for $0.00 cost).*
 
 ### 5. Generate synthetic incident datasets
 ```bash

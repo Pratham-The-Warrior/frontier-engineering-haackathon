@@ -58,7 +58,9 @@ After every production outage, engineering teams face a painful operational bott
 
 ### 04 Can another person reproduce the result?
 **Yes — cleanly and deterministically in under 2 minutes:**
-- Built-in zero-dependency mock LLM fallback enables **100% offline reproducibility without API keys**.
+- **Dual Execution Modes:**
+  - **Real Live LLM Mode:** Supports **Google Gemini (`gemini-3.6-flash`)** and **OpenAI (`gpt-4o`)** for genuine production reasoning.
+  - **Zero-Cost Offline Fallback ($0.00):** Built specifically so hackathon judges and reviewers can verify and evaluate the entire pipeline deterministically without requiring API keys, billing setup, or hitting free-tier rate limits.
 - Complete test suite: **75/75 tests passing in ~0.1s**.
 - Standardized CLI scripts (`run_agent.py`, `run_baseline.py`, `run_evaluation.py`, `server.py`).
 
@@ -373,11 +375,17 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment (Optional)
+### 2. Configure Environment (Live LLM or Offline Mode)
 ```bash
 cp .env.example .env
-# Optional: Set OPENAI_API_KEY=your_key_here
-# If omitted, Prism automatically uses its built-in realistic mock LLM fallback.
+# Option A: Real Live LLM with Google Gemini (gemini-3.6-flash)
+# GEMINI_API_KEY=your_gemini_key_here
+
+# Option B: Real Live LLM with OpenAI (gpt-4o)
+# OPENAI_API_KEY=your_openai_key_here
+
+# Option C: Zero-Cost Offline Mock ($0.00)
+# Simply leave .env empty or omitted. Prism runs deterministically offline for evaluation.
 ```
 
 ### 3. Generate Incident Datasets
