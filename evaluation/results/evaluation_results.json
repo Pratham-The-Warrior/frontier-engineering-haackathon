@@ -1,46 +1,372 @@
 [
   {
     "incident_id": 1,
-    "error": "LLM call failed after 3 attempts: Error code: 404 - [{'error': {'code': 404, 'message': 'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.6-flash for the latest features and improvements. We recommend you to use the Interactions API.', 'status': 'NOT_FOUND'}}]"
+    "incident_name": "incident_01_db_connection_pool",
+    "agent": {
+      "root_cause_accuracy": {
+        "accuracy": "partial",
+        "score": 0.5,
+        "explanation": "The report correctly identifies that deploy v2.14.0 introduced missing connection timeouts leading to pool exhaustion. However, it incorrectly attributes the trigger to a reduction in pool capacity (50 to 20) and a traffic spike, rather than a config schema migration removing timeouts that caused slow queries to hold connections indefinitely."
+      },
+      "timeline_recall": {
+        "raw": "{\n  \"events_found\": [\n    {\n      \"ground_truth\": \"Deploy v2.14.0 completed \\u2014 config"
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "The new config schema did not include connection pool timeout settings that existed in the legacy config block",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No config validation in CI to catch missing required database settings",
+            "found": true,
+            "report_mention": "- **Missing Configuration Linting:** CI pipeline did not validate minimum connection pool sizing `[Git:a1b2c3d4]`."
+          },
+          {
+            "ground_truth": "The new user preferences JOIN query was slower than the original, accelerating pool exhaustion",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No connection pool monitoring alert at lower thresholds (e.g. 50%) to provide earlier warning",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.25,
+        "found_count": 1,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 100,
+        "violations": []
+      },
+      "completeness_score": {
+        "score": 100,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items",
+          "Lessons Learned"
+        ],
+        "missing": []
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 24,
+        "word_count": 833,
+        "has_risk_matrix": true,
+        "has_prevention_analysis": true,
+        "has_forensic_diff": true,
+        "root_cause_keyword_overlap": 0.57
+      },
+      "weighted_score": 53.8
+    },
+    "baseline": {
+      "root_cause_accuracy": {
+        "accuracy": "partial",
+        "score": 0.5,
+        "explanation": "The report correctly identifies a database connection issue following a deployment, but it provides a surface-level explanation (blaming a failure to test connection limits under load) rather than identifying the actual technical root cause (the accidental removal of connection pool timeout settings during a config schema migration)."
+      },
+      "timeline_recall": {
+        "raw": "{\n  \"events_found\": [\n    {\n      \"ground_truth\": \"Deploy v2.14.0 completed \u2014 config migration removed timeout settings\",\n      "
+      },
+      "contributing_factors_recall": {
+        "raw": "{\n  \"factors_found\": [\n    {\n      \"ground_truth\": \"The new config schema did not include connection pool timeout settings that existed in the legacy"
+      },
+      "blameless_score": {
+        "score": 85,
+        "violations": [
+          {
+            "line": 16,
+            "pattern": "the developer forgot",
+            "context": "The service had a database issue after the deployment. The developer forgot to verify connection limits under load.",
+            "suggestion": "Consider replacing with: \"was not part of the checklist\""
+          }
+        ]
+      },
+      "completeness_score": {
+        "score": 87,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items"
+        ],
+        "missing": [
+          "Lessons Learned"
+        ]
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 0,
+        "word_count": 116,
+        "has_risk_matrix": false,
+        "has_prevention_analysis": false,
+        "has_forensic_diff": false,
+        "root_cause_keyword_overlap": 0.22
+      },
+      "weighted_score": 47.2
+    }
   },
   {
     "incident_id": 2,
-    "error": "LLM call failed after 3 attempts: Error code: 404 - [{'error': {'code': 404, 'message': 'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.6-flash for the latest features and improvements. We recommend you to use the Interactions API.', 'status': 'NOT_FOUND'}}]"
+    "incident_name": "incident_02_memory_leak",
+    "agent": {
+      "root_cause_accuracy": {
+        "accuracy": "wrong",
+        "score": 0.0,
+        "explanation": "The report attributes the root cause to a database connection pool reduction causing thread starvation, whereas the ground truth root cause was an unbounded cache memory leak caused by enabling the 'enable_extended_cache' feature flag without eviction policies."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "Feature flag enabled in production",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Memory at 60% and climbing steadily",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Memory alert triggered at 80%",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "First OOMKill",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Second OOMKill \u2014 pattern confirmed",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Feature flag disabled",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Memory stabilized \u2014 incident resolved",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 7
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Extended cache was a prototype without TTL or eviction \u2014 marked as TODO but shipped anyway",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Feature flag was enabled in production after only 1 day in staging, which had fewer tenants and didn't surface the memory issue",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No memory growth rate alerting \u2014 only triggered at 80% threshold, too late for gradual leaks",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Kubernetes restart masked the problem temporarily, delaying diagnosis",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 100,
+        "violations": []
+      },
+      "completeness_score": {
+        "score": 100,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items",
+          "Lessons Learned"
+        ],
+        "missing": []
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 24,
+        "word_count": 833,
+        "has_risk_matrix": true,
+        "has_prevention_analysis": true,
+        "has_forensic_diff": true,
+        "root_cause_keyword_overlap": 0.29
+      },
+      "weighted_score": 35.0
+    },
+    "baseline": {
+      "root_cause_accuracy": {
+        "accuracy": "wrong",
+        "score": 0.0,
+        "explanation": "The report incorrectly attributes the issue to database connection limits under load, whereas the actual root cause was unbounded cache growth leading to heap memory exhaustion due to an unconfigured feature flag."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "Feature flag enabled in production",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Memory at 60% and climbing steadily",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Memory alert triggered at 80%",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "First OOMKill",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Second OOMKill \u2014 pattern confirmed",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Feature flag disabled",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Memory stabilized \u2014 incident resolved",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 7
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Extended cache was a prototype without TTL or eviction \u2014 marked as TODO but shipped anyway",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Feature flag was enabled in production after only 1 day in staging, which had fewer tenants and didn't surface the memory issue",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No memory growth rate alerting \u2014 only triggered at 80% threshold, too late for gradual leaks",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Kubernetes restart masked the problem temporarily, delaying diagnosis",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 85,
+        "violations": [
+          {
+            "line": 16,
+            "pattern": "the developer forgot",
+            "context": "The service had a database issue after the deployment. The developer forgot to verify connection limits under load.",
+            "suggestion": "Consider replacing with: \"was not part of the checklist\""
+          }
+        ]
+      },
+      "completeness_score": {
+        "score": 87,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items"
+        ],
+        "missing": [
+          "Lessons Learned"
+        ]
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 0,
+        "word_count": 116,
+        "has_risk_matrix": false,
+        "has_prevention_analysis": false,
+        "has_forensic_diff": false,
+        "root_cause_keyword_overlap": 0.05
+      },
+      "weighted_score": 32.2
+    }
   },
   {
     "incident_id": 3,
-    "error": "LLM call failed after 3 attempts: Error code: 404 - [{'error': {'code': 404, 'message': 'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.6-flash for the latest features and improvements. We recommend you to use the Interactions API.', 'status': 'NOT_FOUND'}}]"
+    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 7.298577786s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.6-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '7s'}]}}]"
   },
   {
     "incident_id": 4,
-    "error": "LLM call failed after 3 attempts: Error code: 404 - [{'error': {'code': 404, 'message': 'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.6-flash for the latest features and improvements. We recommend you to use the Interactions API.', 'status': 'NOT_FOUND'}}]"
+    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 58.129675136s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.6-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '58s'}]}}]"
   },
   {
     "incident_id": 5,
-    "error": "LLM call failed after 3 attempts: Error code: 404 - [{'error': {'code': 404, 'message': 'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.6-flash for the latest features and improvements. We recommend you to use the Interactions API.', 'status': 'NOT_FOUND'}}]"
+    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 49.539924852s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.6-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '49s'}]}}]"
   },
   {
     "incident_id": 6,
-    "error": "LLM call failed after 3 attempts: Error code: 404 - [{'error': {'code': 404, 'message': 'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.6-flash for the latest features and improvements. We recommend you to use the Interactions API.', 'status': 'NOT_FOUND'}}]"
+    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 40.675649222s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-3.6-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '40s'}]}}]"
   },
   {
     "incident_id": 7,
-    "error": "LLM call failed after 3 attempts: Error code: 404 - [{'error': {'code': 404, 'message': 'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.6-flash for the latest features and improvements. We recommend you to use the Interactions API.', 'status': 'NOT_FOUND'}}]"
+    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 32.002808822s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.6-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '32s'}]}}]"
   },
   {
     "incident_id": 8,
-    "error": "LLM call failed after 3 attempts: Error code: 404 - [{'error': {'code': 404, 'message': 'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.6-flash for the latest features and improvements. We recommend you to use the Interactions API.', 'status': 'NOT_FOUND'}}]"
+    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 23.206245906s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.6-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '23s'}]}}]"
   },
   {
     "incident_id": 9,
-    "error": "LLM call failed after 3 attempts: Error code: 404 - [{'error': {'code': 404, 'message': 'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.6-flash for the latest features and improvements. We recommend you to use the Interactions API.', 'status': 'NOT_FOUND'}}]"
+    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 14.432586708s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.6-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '14s'}]}}]"
   },
   {
     "incident_id": 10,
-    "error": "LLM call failed after 3 attempts: Error code: 404 - [{'error': {'code': 404, 'message': 'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.6-flash for the latest features and improvements. We recommend you to use the Interactions API.', 'status': 'NOT_FOUND'}}]"
+    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 5.810174836s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-3.6-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '5s'}]}}]"
   },
   {
     "incident_id": 11,
-    "error": "LLM call failed after 3 attempts: Error code: 404 - [{'error': {'code': 404, 'message': 'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.6-flash for the latest features and improvements. We recommend you to use the Interactions API.', 'status': 'NOT_FOUND'}}]"
+    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 57.229021137s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.6-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '57s'}]}}]"
   }
 ]
