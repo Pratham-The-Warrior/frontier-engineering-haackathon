@@ -1,0 +1,131 @@
+[
+  {
+    "timestamp": "2025-04-18T14:16:00Z",
+    "user": "Sarah Chen",
+    "role": "Incident Commander / Staff SRE",
+    "message": "<!channel> P1 incident declared: elevated 504 Gateway Timeouts on /v2/payments/charge. Opening war-room.",
+    "reactions": {
+      "eyes": 6,
+      "rotating_light": 4
+    }
+  },
+  {
+    "timestamp": "2025-04-18T14:18:00Z",
+    "user": "Marcus Wright",
+    "role": "Payment Backend Lead",
+    "message": "Payment gateway p99 latency spiked from 120ms to 24,000ms. Transactions are backing up in the ingest queue.",
+    "reactions": {
+      "warning": 3
+    }
+  },
+  {
+    "timestamp": "2025-04-18T14:20:00Z",
+    "user": "Elena Rostova",
+    "role": "Database SRE",
+    "message": "Postgres connection pool is 98% saturated. Seeing `DeadlockDetected` on table `payment_transactions` across all 3 primary shards.",
+    "reactions": {
+      "astonished": 2
+    }
+  },
+  {
+    "timestamp": "2025-04-18T14:22:00Z",
+    "user": "Dave Kumar",
+    "role": "Data & Messaging Lead",
+    "message": "Could this be the read-replica routing PR from 3 hours ago by @Elena Rostova? Maybe queries are locking master?",
+    "reactions": {
+      "thinking_face": 3
+    }
+  },
+  {
+    "timestamp": "2025-04-18T14:25:00Z",
+    "user": "Elena Rostova",
+    "role": "Database SRE",
+    "message": "Checked replica metrics \u2014 replica traffic is healthy. The master DB locks are holding uncommitted transaction blocks for > 4 minutes.",
+    "reactions": {
+      "white_check_mark": 4
+    }
+  },
+  {
+    "timestamp": "2025-04-18T14:28:00Z",
+    "user": "Sarah Chen",
+    "role": "Incident Commander / Staff SRE",
+    "message": "What deploys happened in the last 60 minutes? Check deploy logs and GitHub release tags.",
+    "reactions": {
+      "mag": 3
+    }
+  },
+  {
+    "timestamp": "2025-04-18T14:31:00Z",
+    "user": "Marcus Wright",
+    "role": "Payment Backend Lead",
+    "message": "PR #142 (PAY-9042) deployed at 14:05 UTC by @Dave Kumar. It bumped Kafka batch size to 5000 to improve Black Friday throughput.",
+    "reactions": {
+      "eyes": 5
+    }
+  },
+  {
+    "timestamp": "2025-04-18T14:35:00Z",
+    "user": "Dave Kumar",
+    "role": "Data & Messaging Lead",
+    "message": "Looking at consumer group `payment-workers-v2`. Consumer lag is surging exponentially. Partitions 0-15 keep cycling into `RebalanceInProgress`!",
+    "reactions": {
+      "fearful": 3
+    }
+  },
+  {
+    "timestamp": "2025-04-18T14:38:00Z",
+    "user": "Sarah Chen",
+    "role": "Incident Commander / Staff SRE",
+    "message": "Hypothesis: When batch size increased to 5000, processing the batch took longer than `max.poll.interval.ms`. Kafka broker assumed workers died and triggered partition rebalance, dropping the in-flight DB transaction without closing it!",
+    "reactions": {
+      "heavy_check_mark": 7,
+      "fire": 2
+    }
+  },
+  {
+    "timestamp": "2025-04-18T14:42:00Z",
+    "user": "Dave Kumar",
+    "role": "Data & Messaging Lead",
+    "message": "Spot on @Sarah Chen. The uncommitted batch left open Postgres row locks on `payment_transactions`, starving subsequent batches. Rebalance storm triggered!",
+    "reactions": {
+      "100": 6
+    }
+  },
+  {
+    "timestamp": "2025-04-18T14:50:00Z",
+    "user": "Sarah Chen",
+    "role": "Incident Commander / Staff SRE",
+    "message": "Decision: 1) Deploy hotfix to revert consumer batch size to 100 with strict heartbeat guards. 2) Terminate idle Postgres backend sessions holding locks.",
+    "reactions": {
+      "white_check_mark": 8,
+      "rocket": 5
+    }
+  },
+  {
+    "timestamp": "2025-04-18T15:06:00Z",
+    "user": "Dave Kumar",
+    "role": "Data & Messaging Lead",
+    "message": "PR #143 hotfix deployed. Consumer lag is draining rapidly (down from 450k msgs to 12k).",
+    "reactions": {
+      "tada": 6
+    }
+  },
+  {
+    "timestamp": "2025-04-18T15:12:00Z",
+    "user": "Elena Rostova",
+    "role": "Database SRE",
+    "message": "Postgres connection pool dropped back to 14% utilization. All deadlocks cleared.",
+    "reactions": {
+      "white_check_mark": 5
+    }
+  },
+  {
+    "timestamp": "2025-04-18T15:15:00Z",
+    "user": "Sarah Chen",
+    "role": "Incident Commander / Staff SRE",
+    "message": "Payment gateway latency restored to 95ms p99. Incident resolved. Please prep post-mortem data.",
+    "reactions": {
+      "party_blob": 8
+    }
+  }
+]

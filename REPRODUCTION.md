@@ -1,26 +1,28 @@
-# Reproduction Guide
+# Prism — Reproduction & Verification Guide
 
-Step-by-step instructions to reproduce the results from a clean environment.
+Step-by-step instructions to reproduce all benchmarks, run tests, and launch the interactive web dashboard from a clean environment.
 
-## Prerequisites
+---
+
+## 📋 Prerequisites
 
 | Requirement | Version | Notes |
-|-------------|---------|-------|
-| Python | 3.11+ | Tested on 3.11, 3.12, 3.14 |
-| pip | Latest | For installing dependencies |
-| OpenAI API Key | — | GPT-4o access required |
+|:---|:---|:---|
+| **Python** | `3.11+` | Tested on 3.11, 3.12, 3.14 |
+| **pip** | Latest | Package manager |
+| **OpenAI API Key** | — | GPT-4o access (mock fallback included for offline runs) |
 
-## Setup (< 2 minutes)
+---
+
+## ⚡ Setup (< 2 minutes)
 
 ### 1. Clone the repository
-
 ```bash
 git clone <repo-url>
 cd micro1-hackathon
 ```
 
 ### 2. Create and activate a virtual environment
-
 ```bash
 # Create venv
 python -m venv venv
@@ -36,169 +38,121 @@ source venv/bin/activate
 ```
 
 ### 3. Install dependencies
-
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 4. Configure API key
-
 ```bash
 cp .env.example .env
 ```
-
 Edit `.env` and set your OpenAI API key:
-```
+```env
 OPENAI_API_KEY=sk-your-actual-key-here
 ```
+*(Note: If no API key is provided, the platform automatically utilizes its built-in realistic mock LLM fallback, allowing 100% offline testability).*
 
-### 5. Generate synthetic incident data
-
+### 5. Generate synthetic incident datasets
 ```bash
+# Generate core 10 incidents
 python data/generate_incidents.py
+
+# Generate Mega Outage scenario (INC-011: 1,000+ logs, Kafka partition starvation)
+python data/generate_mega_incident.py
 ```
 
-This creates 10 synthetic incidents in `data/incidents/`, each with logs, Slack threads, git commits, alerts, and ground truth.
+---
 
-## Running the Solution
+## 🚀 Running the Multi-Agent Solution
 
-### Run the multi-agent pipeline on a single incident
-
+### Run on a single incident
 ```bash
 python run_agent.py --incident 1
+# or run the mega outage scenario:
+python run_agent.py --incident 11
 ```
 
 **Expected output:**
-- Progress through 4 phases (source analysis → timeline → root cause → report)
-- Report saved to `output/agent/incident_01_db_connection_pool_postmortem.md`
-- Trajectory saved to `output/agent/incident_01_db_connection_pool_trajectory.json`
+- Progresses through 4 phases (Source Analysis $\to$ Shared Memory & Timeline $\to$ Agentic RCA $\to$ Report Synthesis).
+- Generated report saved to: `output/agent/incident_01_db_connection_pool_postmortem.md`
+- Execution trajectory saved to: `output/agent/incident_01_db_connection_pool_trajectory.json`
 - Runtime: ~30-60 seconds per incident
 - Token usage: ~3,000-6,000 tokens per incident
 
-### Run on all 10 incidents
-
+### Run on all 11 incidents in batch
 ```bash
 python run_agent.py --incident all
 ```
 
-**Expected runtime:** ~5-10 minutes total
-**Expected cost:** ~$0.50-1.00 (GPT-4o pricing)
+---
 
-## Running the Baseline
+## 📊 Running the Baseline & Evaluation
 
-### Single-prompt baseline on a single incident
-
-```bash
-python run_baseline.py --incident 1
-```
-
-**Expected output:**
-- Report saved to `output/baseline/incident_01_db_connection_pool_postmortem.md`
-- Runtime: ~10-15 seconds per incident
-
-### Baseline on all incidents
-
+### 1. Run single-prompt baseline on all incidents
 ```bash
 python run_baseline.py --incident all
 ```
 
-## Running the Evaluation
-
-After running both the agent and baseline on all incidents:
-
+### 2. Run evaluation benchmark comparison
 ```bash
 python run_evaluation.py
 ```
 
 **Expected output:**
-- Comparison table printed to console
-- Detailed results saved to `evaluation/results/evaluation_results.json`
-- Markdown comparison table saved to `evaluation/results/comparison_table.md`
-- Runtime: ~3-5 minutes (uses LLM-as-judge for semantic evaluation)
+- Comparison table printed to console.
+- Detailed results saved to `evaluation/results/evaluation_results.json`.
+- Formatted markdown table saved to `evaluation/results/comparison_table.md`.
 
-### Evaluate a single incident
+---
 
+## 🌐 Launching the Interactive Web Dashboard (Port 8000)
+
+Start the production FastAPI server:
 ```bash
-python run_evaluation.py --incident 1
+python server.py
 ```
 
-## Complete Reproduction Sequence
+Open your browser at:
+* **Interactive Dashboard:** `http://localhost:8000`
+* **Swagger API Explorer:** `http://localhost:8000/docs`
+* **Incidents REST API:** `http://localhost:8000/api/incidents`
 
-Run these commands in order to reproduce the full results:
+---
 
+## 🧪 Running Automated Tests
+
+Run the complete regression test suite:
 ```bash
-# Setup virtual environment
-python -m venv venv
-
-# Activate venv
-# On Windows (PowerShell): .\venv\Scripts\Activate.ps1
-# On Linux/macOS: source venv/bin/activate
-
-pip install -r requirements.txt
-cp .env.example .env
-# (edit .env to add your OPENAI_API_KEY)
-python data/generate_incidents.py
-
-# Run both approaches
-python run_baseline.py --incident all
-python run_agent.py --incident all
-
-# Evaluate
-python run_evaluation.py
+python -m unittest discover tests
+```
+**Expected output:**
+```
+Ran 75 tests in ~0.15s
+OK
 ```
 
-## Expected Output Structure
+---
 
-After a full run, the output directory should contain:
+## 🔌 Running Enterprise Integrations
 
-```
-output/
-├── baseline/
-│   ├── incident_01_db_connection_pool_postmortem.md
-│   ├── incident_01_db_connection_pool_trajectory.json
-│   ├── ... (10 incidents)
-│   └── summary.json
-└── agent/
-    ├── incident_01_db_connection_pool_postmortem.md
-    ├── incident_01_db_connection_pool_trajectory.json
-    ├── ... (10 incidents)
-    └── summary.json
-
-evaluation/results/
-├── evaluation_results.json
-└── comparison_table.md
+### Export Slack Block Kit payload
+```bash
+python -m integrations.enterprise_integrations --incident-dir data/incidents/incident_01_db_connection_pool --export-slack
 ```
 
-## Data Requirements
+### Export Jira Action Item tickets
+```bash
+python -m integrations.enterprise_integrations --incident-dir data/incidents/incident_01_db_connection_pool --export-jira
+```
 
-All data is synthetic and included in the repository. No external datasets, APIs (beyond OpenAI), or private data needed.
+---
 
-The 10 synthetic incidents are generated by `data/generate_incidents.py` and written to `data/incidents/`. Each incident contains:
-- `logs.jsonl` — Structured application/infrastructure log entries
-- `slack_thread.json` — Simulated incident response Slack conversation
-- `git_commits.json` — Recent git commit history with diffs
-- `alerts.json` — Monitoring/alerting events
-- `ground_truth.json` — Known root cause, timeline, and contributing factors (used for evaluation only)
+## 💰 Cost & Resource Estimate
 
-## Cost Estimate
-
-| Operation | Approx. Cost (GPT-4o) |
-|-----------|----------------------|
-| Single incident (agent) | $0.05-0.10 |
-| All 10 incidents (agent) | $0.50-1.00 |
-| All 10 incidents (baseline) | $0.20-0.40 |
-| Full evaluation | $0.30-0.50 |
-| **Total reproduction** | **~$1.00-2.00** |
-
-## Troubleshooting
-
-### "OPENAI_API_KEY not set"
-- Ensure `.env` file exists with a valid key
-- The key must start with `sk-` (not the placeholder)
-
-### Unicode errors on Windows
-- The code handles Windows console encoding. If you see emoji-related errors, ensure your terminal supports UTF-8 or run with `--quiet` flag.
-
-### Rate limiting
-- The pipeline includes automatic retry with exponential backoff
-- If you hit rate limits, wait 60 seconds and retry
+| Operation | Approx. Cost (GPT-4o) | Offline Fallback |
+|:---|:---:|:---:|
+| Single incident (agent) | ~$0.05-0.10 | $0.00 |
+| All 11 incidents (agent) | ~$0.60-1.10 | $0.00 |
+| All 11 incidents (baseline) | ~$0.25-0.45 | $0.00 |
+| Full benchmark evaluation | ~$0.35-0.60 | $0.00 |
+| **Total reproduction run** | **~$1.20-2.15** | **$0.00** |

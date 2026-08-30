@@ -13,7 +13,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Background
 from pydantic import BaseModel
 
 import storage
-from collectors import github_collector, slack_collector, pagerduty_collector, log_collector
+from collectors import github_collector, slack_collector, pagerduty_collector, log_collector, jira_collector
 
 router = APIRouter(prefix="/api/incidents", tags=["incidents"])
 
@@ -31,10 +31,13 @@ class CreateIncidentRequest(BaseModel):
     slack_channel: str = ""
     slack_thread_ts: str = ""
     pagerduty_incident_id: str = ""
+    jira_project_key: str = ""
+    jira_jql: str = ""
     # Manual data fallbacks
     logs_text: str = ""
     slack_text: str = ""
     alerts_json: str = ""
+    jira_text: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -99,11 +102,14 @@ async def create_incident(req: CreateIncidentRequest, background_tasks: Backgrou
             "slack_channel": req.slack_channel,
             "slack_thread_ts": req.slack_thread_ts,
             "pagerduty_incident_id": req.pagerduty_incident_id,
+            "jira_project_key": req.jira_project_key,
+            "jira_jql": req.jira_jql,
             "time_window_hours": req.time_window_hours,
             "incident_time": req.incident_time,
             "logs_text": req.logs_text,
             "slack_text": req.slack_text,
             "alerts_json": req.alerts_json,
+            "jira_text": req.jira_text,
         },
     )
 
@@ -125,14 +131,17 @@ async def create_incident_with_upload(
     incident_time: str = Form(""),
     time_window_hours: int = Form(24),
     github_repo: str = Form(""),
+    jira_project_key: str = Form(""),
     log_file: UploadFile | None = File(None),
     slack_file: UploadFile | None = File(None),
     alerts_file: UploadFile | None = File(None),
+    jira_file: UploadFile | None = File(None),
 ):
-    """Create an incident with file uploads for logs, slack messages, and alerts."""
+    """Create an incident with file uploads for logs, slack messages, alerts, and jira tickets."""
     logs_text = ""
     slack_text = ""
     alerts_json = ""
+    jira_text = ""
 
     if log_file:
         content = await log_file.read()
@@ -146,17 +155,23 @@ async def create_incident_with_upload(
         content = await alerts_file.read()
         alerts_json = content.decode("utf-8", errors="replace")
 
+    if jira_file:
+        content = await jira_file.read()
+        jira_text = content.decode("utf-8", errors="replace")
+
     incident = storage.create_incident(
         title=title,
         severity=severity,
         incident_time=incident_time,
         config={
             "github_repo": github_repo,
+            "jira_project_key": jira_project_key,
             "time_window_hours": time_window_hours,
             "incident_time": incident_time,
             "logs_text": logs_text,
             "slack_text": slack_text,
             "alerts_json": alerts_json,
+            "jira_text": jira_text,
         },
     )
 
@@ -173,7 +188,6 @@ async def create_incident_with_upload(
 async def list_incidents():
     """List all incidents."""
     incidents = storage.list_incidents()
-    # Attach report status
     for inc in incidents:
         report = storage.get_report(inc["id"])
         inc["has_report"] = report is not None

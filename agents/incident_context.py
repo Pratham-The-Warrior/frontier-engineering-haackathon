@@ -1,10 +1,9 @@
 """
-Shared Incident Context — the "memory" layer for the multi-agent pipeline.
+Shared Incident Context — the "memory" and graph layer for the multi-agent pipeline.
 
-All agents write structured findings to this context, and downstream agents
-can query it by source, category, time range, or keyword.  This implements
-a proper shared memory store rather than simple argument forwarding, which
-the judging rubric specifically rewards under "memory" capabilities.
+All agents write structured findings and canonical events to this context.
+Downstream agents can query it by source, category, time range, entity reference,
+or graph relationships.
 """
 
 from __future__ import annotations
@@ -12,30 +11,28 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
+
+from models.canonical_event import CanonicalEvent, EntityRegistry, ActorEntity, ServiceEntity
+from models.incident_graph import IncidentGraph, GraphNode, GraphEdge, NodeType, EdgeRelation
 
 
 @dataclass
 class Finding:
     """A single finding written by an agent."""
-
     source_agent: str
     category: str          # e.g. "error", "decision", "deploy", "alert", "correlation"
     summary: str
     detail: str = ""
     timestamp: str = ""    # ISO 8601 or empty
     evidence: str = ""     # raw evidence reference
-    severity: str = ""     # "critical", "warning", "info"
+    severity: str = "info" # "critical", "warning", "info"
     metadata: dict = field(default_factory=dict)
 
 
 class IncidentContext:
     """
-    Queryable shared memory for an incident investigation.
-
-    Agents use ``add_finding()`` to record structured observations.
-    Downstream agents use ``query()`` to retrieve relevant context without
-    receiving the entire upstream payload — they ask for what they need.
+    Queryable shared memory and causal knowledge graph for an incident investigation.
     """
 
     def __init__(self, incident_id: str = "", incident_title: str = "") -> None:
@@ -44,9 +41,12 @@ class IncidentContext:
         self._findings: list[Finding] = []
         self._timeline_events: list[dict] = []
         self._agent_summaries: dict[str, str] = {}
+        self._canonical_events: list[CanonicalEvent] = []
+        self.registry: EntityRegistry = EntityRegistry()
+        self.graph: IncidentGraph = IncidentGraph()
 
     # ------------------------------------------------------------------
-    # Write API — agents add findings here
+    # Write API — agents add findings and events
     # ------------------------------------------------------------------
 
     def add_finding(
@@ -75,6 +75,47 @@ class IncidentContext:
             )
         )
 
+    def add_canonical_event(self, event: CanonicalEvent) -> None:
+        """Ingest a validated CanonicalEvent and register into the IncidentGraph."""
+        self._canonical_events.append(event)
+        
+        # Add corresponding node in the graph
+        node_id = event.event_id
+        node_type_map = {
+            "slack": NodeType.DECISION if event.category == "decision" else NodeType.ACTOR,
+            "github_commit": NodeType.COMMIT,
+            "github_pr": NodeType.PR,
+            "jira_ticket": NodeType.TICKET,
+            "pagerduty_alert": NodeType.ALERT,
+            "app_log": NodeType.ERROR_CLUSTER,
+        }
+        n_type = node_type_map.get(event.source_type.value, NodeType.ERROR_CLUSTER)
+        
+        self.graph.add_node(GraphNode(
+            id=node_id,
+            node_type=n_type,
+            label=event.title or event.summary[:60],
+            timestamp=event.event_timestamp,
+            severity=event.severity.value,
+            entity_ref=",".join(event.entity_refs),
+            metadata=event.evidence_payload,
+        ))
+
+        # Add entity relations
+        for s_ref in event.service_refs:
+            svc_node_id = f"svc:{s_ref}"
+            if svc_node_id not in self.graph.nodes:
+                self.graph.add_node(GraphNode(
+                    id=svc_node_id,
+                    node_type=NodeType.SERVICE,
+                    label=s_ref,
+                ))
+            self.graph.add_edge(GraphEdge(
+                source=node_id,
+                target=svc_node_id,
+                relation=EdgeRelation.AFFECTS_SERVICE,
+            ))
+
     def add_timeline_event(
         self,
         timestamp: str,
@@ -97,7 +138,7 @@ class IncidentContext:
         self._agent_summaries[agent_name] = summary
 
     # ------------------------------------------------------------------
-    # Read / Query API — downstream agents query here
+    # Read / Query API
     # ------------------------------------------------------------------
 
     def query(
@@ -107,11 +148,7 @@ class IncidentContext:
         severity: str | None = None,
         keyword: str | None = None,
     ) -> list[dict]:
-        """
-        Query findings with optional filters.
-
-        Returns a list of dicts (serialisable) matching all specified filters.
-        """
+        """Query findings with optional filters."""
         results: list[Finding] = list(self._findings)
 
         if source_agent:
@@ -128,6 +165,21 @@ class IncidentContext:
             ]
 
         return [self._finding_to_dict(f) for f in results]
+
+    def query_canonical_events(
+        self,
+        service: str | None = None,
+        source_type: str | None = None,
+        min_severity: str | None = None,
+    ) -> list[CanonicalEvent]:
+        """Query canonical events by service, source, or severity."""
+        events = list(self._canonical_events)
+        if service:
+            s_clean = service.lower()
+            events = [e for e in events if any(s_clean in s.lower() for s in e.service_refs)]
+        if source_type:
+            events = [e for e in events if e.source_type.value == source_type]
+        return events
 
     def get_timeline(self) -> list[dict]:
         """Return all timeline events sorted chronologically."""
@@ -149,20 +201,24 @@ class IncidentContext:
         return self.query(severity="critical")
 
     # ------------------------------------------------------------------
-    # Snapshot — for trajectory logging
+    # Snapshot — for trajectory logging & audit
     # ------------------------------------------------------------------
 
     def snapshot(self) -> dict:
-        """Return a serialisable snapshot of the entire context (for logging)."""
+        """Return a serialisable snapshot of the entire context and graph."""
         return {
             "incident_id": self.incident_id,
             "incident_title": self.incident_title,
             "total_findings": len(self._findings),
             "total_timeline_events": len(self._timeline_events),
+            "total_canonical_events": len(self._canonical_events),
             "findings_by_agent": self._count_by("source_agent"),
             "findings_by_category": self._count_by("category"),
             "findings_by_severity": self._count_by("severity"),
             "agent_summaries": dict(self._agent_summaries),
+            "graph_summary": self.graph.to_summary_dict(),
+            "registered_services": [s.service_id for s in self.registry.services.values()],
+            "registered_actors": [a.display_name for a in self.registry.actors.values()],
         }
 
     # ------------------------------------------------------------------

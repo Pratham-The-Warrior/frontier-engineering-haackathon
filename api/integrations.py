@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 import storage
-from collectors import github_collector, slack_collector, pagerduty_collector
+from collectors import github_collector, slack_collector, pagerduty_collector, jira_collector
 
 router = APIRouter(prefix="/api/integrations", tags=["integrations"])
 
@@ -31,6 +31,13 @@ class PagerDutyConfig(BaseModel):
     api_key: str
 
 
+class JiraConfig(BaseModel):
+    base_url: str
+    email: str
+    api_token: str
+    default_project: str = ""
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -41,7 +48,7 @@ async def list_integrations():
     integrations = storage.list_integrations()
 
     # Ensure all providers are listed even if not configured
-    providers = {"github", "slack", "pagerduty"}
+    providers = {"github", "slack", "pagerduty", "jira"}
     configured = {i["provider"] for i in integrations}
 
     for provider in providers - configured:
@@ -60,7 +67,6 @@ async def list_integrations():
 @router.post("/github")
 async def configure_github(config: GitHubConfig):
     """Configure GitHub integration."""
-    # Validate repo URL
     try:
         github_collector._parse_repo(config.repo_url)
     except ValueError as e:
@@ -72,7 +78,6 @@ async def configure_github(config: GitHubConfig):
         credentials={"token": config.token},
     )
 
-    # Auto-test connection
     test_result = github_collector.test_connection(config.repo_url, config.token)
     storage.update_integration_test("github", test_result)
 
@@ -109,6 +114,21 @@ async def configure_pagerduty(config: PagerDutyConfig):
     return {"status": "saved", "test_result": test_result}
 
 
+@router.post("/jira")
+async def configure_jira(config: JiraConfig):
+    """Configure Jira integration."""
+    storage.save_integration(
+        provider="jira",
+        config={"base_url": config.base_url, "default_project": config.default_project},
+        credentials={"email": config.email, "api_token": config.api_token},
+    )
+
+    test_result = jira_collector.test_connection(config.base_url, config.email, config.api_token)
+    storage.update_integration_test("jira", test_result)
+
+    return {"status": "saved", "test_result": test_result}
+
+
 @router.post("/test/{provider}")
 async def test_integration(provider: str):
     """Test connectivity for a configured integration."""
@@ -128,6 +148,12 @@ async def test_integration(provider: str):
         result = slack_collector.test_connection(creds.get("bot_token", ""))
     elif provider == "pagerduty":
         result = pagerduty_collector.test_connection(creds.get("api_key", ""))
+    elif provider == "jira":
+        result = jira_collector.test_connection(
+            config.get("base_url", ""),
+            creds.get("email", ""),
+            creds.get("api_token", ""),
+        )
     else:
         raise HTTPException(status_code=400, detail=f"Unknown provider: {provider}")
 

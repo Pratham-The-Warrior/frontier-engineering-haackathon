@@ -1,0 +1,15 @@
+[
+  {
+    "agent": "baseline_single_prompt",
+    "step": "single_llm_call",
+    "model": "gpt-4o",
+    "usage": {
+      "prompt_tokens": 100,
+      "completion_tokens": 150,
+      "total_tokens": 250
+    },
+    "latency_seconds": 0.05,
+    "input_length_chars": 309534,
+    "output_length_chars": 777
+  }
+]

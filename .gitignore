@@ -1,8 +1,34 @@
+# Environment & Secrets
 .env
+.env.local
+
+# Python Cache & Artifacts
 __pycache__/
-*.pyc
-output/
-evaluation/results/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+coverage/
+
+# Virtual Environments
 .venv/
 venv/
-*.egg-info/
+ENV/
+
+# Application Database & Logs
+postmortem.db
+postmortem.db-journal
+data/postmortem.db
+*.db
+*.log
+
+# OS Metadata
+.DS_Store
+Thumbs.db
+
+# Generated Output & Trajectories (optional, kept if committing gold samples)
+# output/
+# evaluation/results/

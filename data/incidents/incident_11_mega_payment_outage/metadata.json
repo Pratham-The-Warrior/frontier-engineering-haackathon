@@ -1,0 +1,17 @@
+{
+  "incident_id": "INC-011",
+  "title": "Global Payment Outage & Cascading Kafka Partition Starvation",
+  "severity": "P1-CRITICAL",
+  "service": "payment-gateway",
+  "incident_commander": "Sarah Chen",
+  "start_time": "2025-04-18T14:15:00Z",
+  "end_time": "2025-04-18T15:15:00Z",
+  "affected_services": [
+    "payment-gateway",
+    "kafka-consumer",
+    "postgres-db",
+    "auth-service",
+    "order-service"
+  ],
+  "customer_impact": "68,000 checkout transactions failed (HTTP 504 / 500) over 60 minutes. Estimated revenue loss: $420,000."
+}

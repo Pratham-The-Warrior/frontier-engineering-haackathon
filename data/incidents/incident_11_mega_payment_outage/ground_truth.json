@@ -1,0 +1,79 @@
+{
+  "incident_id": "INC-011",
+  "title": "Global Payment Outage & Cascading Kafka Partition Starvation",
+  "root_cause": "PR #142 (commit f8a9b1c) increased Kafka consumer batch size (max.poll.records) from 100 to 5000 without configuring a corresponding heartbeat interval or poll timeout guard. Under peak Black Friday load, batch processing duration exceeded max.poll.interval.ms (300,000ms), causing the Kafka broker to mark consumers dead and trigger continuous partition rebalance storms across partitions 0-15. Dropped consumers left open, uncommitted transaction locks on the payment_transactions PostgreSQL table, which starved connection pools and caused cascading HTTP 504 Gateway Timeouts across upstream payment and order services.",
+  "contributing_factors": [
+    "Kafka consumer batch size increased 50x without load testing or heartbeat interval adjustments.",
+    "PostgreSQL transaction timeout and statement timeout were not set, allowing orphaned sessions to hold ExclusiveLocks indefinitely.",
+    "Absence of a circuit breaker between payment-gateway and kafka-consumer to shed load during rebalance cycles.",
+    "Deploy was rolled out directly to 100% of payment worker nodes without a canary stage."
+  ],
+  "key_timeline_events": [
+    {
+      "timestamp": "2025-04-18T14:05:00Z",
+      "source": "git",
+      "description": "PR #142 deployed by Dave Kumar setting max.poll.records=5000 on payment-workers-v2"
+    },
+    {
+      "timestamp": "2025-04-18T14:15:30Z",
+      "source": "alerts",
+      "description": "PagerDuty P1 alert: PaymentGatewayLatencyP99Exceeded (p99 latency > 24,000ms)"
+    },
+    {
+      "timestamp": "2025-04-18T14:17:00Z",
+      "source": "alerts",
+      "description": "PagerDuty P1 alert: KafkaConsumerLagExceeded (> 350,000 messages)"
+    },
+    {
+      "timestamp": "2025-04-18T14:20:00Z",
+      "source": "slack",
+      "description": "Elena Rostova flags Postgres connection pool at 98% and DeadlockDetected on payment_transactions"
+    },
+    {
+      "timestamp": "2025-04-18T14:38:00Z",
+      "source": "slack",
+      "description": "Sarah Chen identifies root cause: 5000 batch size exceeds max.poll.interval.ms triggering rebalance storm and uncommitted DB locks"
+    },
+    {
+      "timestamp": "2025-04-18T14:50:00Z",
+      "source": "slack",
+      "description": "Decision: Deploy hotfix reverting batch size to 100 and terminate idle locking Postgres backends"
+    },
+    {
+      "timestamp": "2025-04-18T15:05:00Z",
+      "source": "git",
+      "description": "Hotfix commit d3e2a1b (PR #143) deployed by Dave Kumar"
+    },
+    {
+      "timestamp": "2025-04-18T15:15:00Z",
+      "source": "slack",
+      "description": "Payment latency restored to 95ms; all 68k checkout backlog cleared; incident resolved"
+    }
+  ],
+  "action_items": [
+    {
+      "priority": "P0",
+      "type": "Prevent",
+      "action": "Enforce automated CI lint rules forbidding max.poll.records > 500 without explicit max.poll.interval.ms and heartbeat overrides",
+      "owner": "Data Infrastructure Team"
+    },
+    {
+      "priority": "P0",
+      "type": "Prevent",
+      "action": "Set idle_in_transaction_session_timeout = 30s on PostgreSQL payment databases",
+      "owner": "Database Reliability Team"
+    },
+    {
+      "priority": "P1",
+      "type": "Detect",
+      "action": "Add Datadog alerts on Kafka consumer group rebalance frequency (> 2 rebalances in 5 mins)",
+      "owner": "Observability Team"
+    },
+    {
+      "priority": "P2",
+      "type": "Mitigate",
+      "action": "Implement circuit breaker and dead-letter queue in payment worker ingest",
+      "owner": "Payment Core Team"
+    }
+  ]
+}

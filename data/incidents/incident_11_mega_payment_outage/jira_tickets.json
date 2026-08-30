@@ -1,0 +1,36 @@
+[
+  {
+    "key": "PAY-9042",
+    "summary": "Black Friday Throughput: Increase Kafka payment consumer batch size to 5000",
+    "description": "Increase consumer max.poll.records to 5000 to maximize throughput during Black Friday sales surge.",
+    "status": "In Progress",
+    "priority": "P1",
+    "created_at": "2025-04-16T14:00:00Z",
+    "assignee": "Dave Kumar",
+    "components": [
+      "payment-gateway",
+      "kafka-consumer"
+    ],
+    "labels": [
+      "black-friday",
+      "throughput-optimization"
+    ]
+  },
+  {
+    "key": "INFRA-819",
+    "summary": "Investigate Kafka rebalance storm during partition leader failover",
+    "description": "Kafka consumer groups experiencing frequent rebalance cycles under heavy batch sizes.",
+    "status": "Open",
+    "priority": "P2",
+    "created_at": "2025-04-13T14:00:00Z",
+    "assignee": "Sarah Chen",
+    "components": [
+      "kafka-consumer",
+      "postgres-db"
+    ],
+    "labels": [
+      "kafka",
+      "resilience"
+    ]
+  }
+]

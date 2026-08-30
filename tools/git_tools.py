@@ -20,7 +20,7 @@ def parse_commits(raw_commits: list[dict]) -> list[dict]:
             "files_changed": c.get("files_changed", []),
             "diff_summary": c.get("diff_summary", ""),
         })
-    commits.sort(key=lambda c: c["timestamp"])
+    commits.sort(key=lambda c: c.get("timestamp", ""))
     return commits
 
 
@@ -33,9 +33,11 @@ def find_suspicious_changes(
     Find commits within *window_hours* before the incident that could be
     related to the failure.  Ranks them by proximity and risk indicators.
     """
+    if not incident_time:
+        return commits
     try:
-        inc_dt = datetime.fromisoformat(incident_time.replace("Z", "+00:00"))
-    except ValueError:
+        inc_dt = datetime.fromisoformat(str(incident_time).replace("Z", "+00:00"))
+    except (ValueError, TypeError):
         return commits  # fall back to returning all
 
     window_start = inc_dt - timedelta(hours=window_hours)
@@ -43,8 +45,11 @@ def find_suspicious_changes(
 
     for commit in commits:
         try:
-            c_dt = datetime.fromisoformat(commit["timestamp"].replace("Z", "+00:00"))
-        except ValueError:
+            ts_str = commit.get("timestamp", "")
+            if not ts_str:
+                continue
+            c_dt = datetime.fromisoformat(str(ts_str).replace("Z", "+00:00"))
+        except (ValueError, TypeError):
             continue
 
         if window_start <= c_dt <= inc_dt:

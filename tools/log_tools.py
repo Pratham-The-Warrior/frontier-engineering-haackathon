@@ -85,9 +85,9 @@ def detect_anomalies(logs: list[dict]) -> list[dict]:
 
     # --- Detect level transitions per service ---
     service_levels: dict[str, str] = {}
-    for log in sorted(logs, key=lambda l: l["timestamp"]):
-        svc = log["service"]
-        level = log["level"]
+    for log in sorted(logs, key=lambda l: l.get("timestamp", "")):
+        svc = log.get("service", "unknown")
+        level = log.get("level", "INFO")
         prev = service_levels.get(svc, "INFO")
         if level in ("ERROR", "FATAL") and prev in ("INFO", "DEBUG"):
             anomalies.append({

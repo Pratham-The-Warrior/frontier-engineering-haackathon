@@ -1,0 +1,42 @@
+[
+  {
+    "timestamp": "2025-04-18T14:15:30Z",
+    "source": "PagerDuty",
+    "severity": "CRITICAL",
+    "title": "PaymentGatewayLatencyP99Exceeded",
+    "description": "Payment Gateway p99 latency is 24,100ms (threshold: 500ms) on cluster us-east-1.",
+    "service": "payment-gateway"
+  },
+  {
+    "timestamp": "2025-04-18T14:17:00Z",
+    "source": "PagerDuty",
+    "severity": "CRITICAL",
+    "title": "KafkaConsumerLagExceeded",
+    "description": "Consumer group 'payment-workers-v2' partition lag > 350,000 messages.",
+    "service": "kafka-consumer"
+  },
+  {
+    "timestamp": "2025-04-18T14:19:15Z",
+    "source": "Datadog",
+    "severity": "CRITICAL",
+    "title": "PostgresConnectionPoolExhausted",
+    "description": "Active connections on db-master-prod reached 990/1000 with 45 waiting queries.",
+    "service": "postgres-db"
+  },
+  {
+    "timestamp": "2025-04-18T14:22:00Z",
+    "source": "PagerDuty",
+    "severity": "WARNING",
+    "title": "OrderCheckoutFailuresHigh",
+    "description": "Order placement service reporting 42% HTTP 504 error rate on /orders/checkout.",
+    "service": "order-service"
+  },
+  {
+    "timestamp": "2025-04-18T15:14:00Z",
+    "source": "PagerDuty",
+    "severity": "INFO",
+    "title": "AllAlertsResolved",
+    "description": "All monitor thresholds normalized. Latency and error rates within SLO.",
+    "service": "payment-gateway"
+  }
+]

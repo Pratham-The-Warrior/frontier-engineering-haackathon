@@ -1,0 +1,68 @@
+[
+  {
+    "incident_id": "INC-001",
+    "incident_title": "Database Connection Pool Exhaustion",
+    "total_seconds": 0.0,
+    "tokens_used": 250
+  },
+  {
+    "incident_id": "INC-002",
+    "incident_title": "Memory Leak in Caching Layer",
+    "total_seconds": 0.0,
+    "tokens_used": 250
+  },
+  {
+    "incident_id": "INC-003",
+    "incident_title": "Cascading Microservice Failure Due to Circuit Breaker Misconfiguration",
+    "total_seconds": 0.0,
+    "tokens_used": 250
+  },
+  {
+    "incident_id": "INC-004",
+    "incident_title": "SSL Certificate Expiry",
+    "total_seconds": 0.0,
+    "tokens_used": 250
+  },
+  {
+    "incident_id": "INC-005",
+    "incident_title": "DNS Resolution Failure After Provider Migration",
+    "total_seconds": 0.0,
+    "tokens_used": 250
+  },
+  {
+    "incident_id": "INC-006",
+    "incident_title": "Race Condition in Payment Processing",
+    "total_seconds": 0.0,
+    "tokens_used": 250
+  },
+  {
+    "incident_id": "INC-007",
+    "incident_title": "Disk Space Exhaustion From Disabled Log Rotation",
+    "total_seconds": 0.0,
+    "tokens_used": 250
+  },
+  {
+    "incident_id": "INC-008",
+    "incident_title": "Third-Party API Rate Limiting Cascade",
+    "total_seconds": 0.0,
+    "tokens_used": 250
+  },
+  {
+    "incident_id": "INC-009",
+    "incident_title": "Kubernetes Pod Crash Loop From Bad Health Check",
+    "total_seconds": 0.0,
+    "tokens_used": 250
+  },
+  {
+    "incident_id": "INC-010",
+    "incident_title": "Data Pipeline Corruption From Out-of-Order Schema Migration",
+    "total_seconds": 0.0,
+    "tokens_used": 250
+  },
+  {
+    "incident_id": "INC-011",
+    "incident_title": "Global Payment Outage & Cascading Kafka Partition Starvation",
+    "total_seconds": 0.0,
+    "tokens_used": 250
+  }
+]

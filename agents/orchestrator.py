@@ -1,12 +1,17 @@
 """
-Pipeline Orchestrator
-Runs the multi-agent incident analysis pipeline:
-Phase 1: Source Analysis Agents (Log, Slack, Git)
-Phase 2: Timeline Builder (Cross-Source Synthesis & IncidentContext)
-Phase 3: Agentic Root Cause Analyzer (Hypothesis Testing & Evidence Tools)
-Phase 4: Report Writer (CodeRabbit-Grade Scannable Post-Mortem)
+Pipeline Orchestrator — Enterprise Incident Intelligence Engine.
 
-Integrates shared memory (IncidentContext) and comprehensive trajectory capture.
+Orchestrates the multi-agent incident analysis pipeline:
+Phase 1: Source Analysis Agents (Log Parser, Comms Analyzer, Git Analyzer)
+Phase 2: Timeline Builder (Cross-Source Synthesis & IncidentContext Shared Memory)
+Phase 3: Agentic Root Cause Analyzer (Hypothesis Testing & Evidence Verification Tools)
+Phase 4: Report Writer (CodeRabbit-Grade Scannable Executive Post-Mortem)
+
+Integrates:
+- Universal Canonical Incident Events (UCIE)
+- Multi-Modal Entity Resolution (MMER)
+- Temporal-Causal Incident Knowledge Graph (TCIKG)
+- Ingestion-Time Zero-Trust Secret & PII Scrubbing
 """
 
 from __future__ import annotations
@@ -34,6 +39,9 @@ from agents import (
     report_writer,
 )
 from agents.incident_context import IncidentContext
+from models.canonical_event import CanonicalEvent, EventSourceType, EventSeverity
+from tools.entity_resolver import EntityResolver
+from tools.sanitizer import sanitize_dict, sanitize_text
 
 
 def load_incident(incident_dir: str) -> dict:
@@ -49,24 +57,9 @@ def load_incident(incident_dir: str) -> dict:
 
 def collect_data_from_sources(config: dict) -> tuple[dict, list[str]]:
     """
-    Collect incident data from real sources (GitHub, Slack, PagerDuty, uploads).
-
-    Args:
-        config: Dict with source configuration:
-            - github_repo: GitHub repo URL or owner/repo
-            - slack_channel: Slack channel ID
-            - slack_thread_ts: Specific thread timestamp
-            - pagerduty_incident_id: PagerDuty incident ID
-            - incident_time: ISO timestamp of the incident
-            - time_window_hours: How far back to look for commits
-            - logs_text: Raw log text (upload/paste fallback)
-            - slack_text: Raw chat text (paste fallback)
-            - alerts_json: Raw alerts JSON (upload/paste fallback)
-
-    Returns:
-        (data_dict, sources_used) — data in the same format as load_incident()
+    Collect incident data from real sources (GitHub, Slack, PagerDuty, Jira, uploads).
     """
-    from collectors import github_collector, slack_collector, pagerduty_collector, log_collector
+    from collectors import github_collector, slack_collector, pagerduty_collector, log_collector, jira_collector
     import storage
 
     data: dict[str, Any] = {}
@@ -91,7 +84,6 @@ def collect_data_from_sources(config: dict) -> tuple[dict, list[str]]:
     github_repo = config.get("github_repo", "")
     if github_repo:
         try:
-            # Get credentials from stored integration or use empty
             gh_integration = storage.get_integration("github")
             token = ""
             if gh_integration:
@@ -132,7 +124,6 @@ def collect_data_from_sources(config: dict) -> tuple[dict, list[str]]:
         except Exception as e:
             print(f"  [WARN] Slack collection failed: {e}")
     elif slack_text:
-        # Fallback: parse pasted messages
         data["slack_thread.json"] = slack_collector.parse_pasted_messages(slack_text)
         sources_used.append("slack_paste")
 
@@ -156,6 +147,34 @@ def collect_data_from_sources(config: dict) -> tuple[dict, list[str]]:
         except json.JSONDecodeError:
             pass
 
+    # --- Jira ---
+    jira_project = config.get("jira_project_key", "")
+    jira_jql = config.get("jira_jql", "")
+    jira_text = config.get("jira_text", "")
+    if jira_project or jira_jql:
+        try:
+            jira_integration = storage.get_integration("jira")
+            if jira_integration:
+                creds = jira_integration.get("credentials", {})
+                cfg = jira_integration.get("config", {})
+                base_url = cfg.get("base_url", "")
+                email = creds.get("email", "")
+                api_token = creds.get("api_token", "")
+                tickets = jira_collector.fetch_incident_tickets(
+                    base_url=base_url,
+                    email=email,
+                    api_token=api_token,
+                    project_key=jira_project or cfg.get("default_project", ""),
+                    jql=jira_jql,
+                )
+                data["jira_tickets.json"] = tickets
+                sources_used.append("jira")
+        except Exception as e:
+            print(f"  [WARN] Jira collection failed: {e}")
+    elif jira_text:
+        data["jira_tickets.json"] = jira_collector.parse_pasted_jira_tickets(jira_text)
+        sources_used.append("jira_paste")
+
     # --- Logs ---
     logs_text = config.get("logs_text", "")
     if logs_text:
@@ -163,11 +182,12 @@ def collect_data_from_sources(config: dict) -> tuple[dict, list[str]]:
         data["logs.jsonl"] = logs
         sources_used.append("logs_upload")
 
-    # Ensure we have at least empty lists for missing sources
+    # Ensure default structure
     data.setdefault("git_commits.json", [])
     data.setdefault("slack_thread.json", [])
     data.setdefault("alerts.json", [])
     data.setdefault("logs.jsonl", [])
+    data.setdefault("jira_tickets.json", [])
     data.setdefault("metadata.json", {
         "incident_id": config.get("incident_id", "LIVE"),
         "title": config.get("title", "Live Incident Analysis"),
@@ -176,26 +196,152 @@ def collect_data_from_sources(config: dict) -> tuple[dict, list[str]]:
     return data, sources_used
 
 
+def _populate_canonical_context(context: IncidentContext, data: dict) -> None:
+    """
+    Convert raw incident telemetry into CanonicalEvents, resolve entities,
+    and build the incident knowledge graph.
+    """
+    resolver = EntityResolver(context.registry)
+    resolver.populate_from_incident_data(data)
+
+    # 1. Logs -> Canonical Events
+    for i, log in enumerate(data.get("logs.jsonl", [])):
+        ts = log.get("timestamp", "")
+        level = log.get("level", "INFO")
+        svc = log.get("service", "unknown")
+        msg = log.get("message", "")
+        
+        sev = EventSeverity.CRITICAL if level == "FATAL" else (
+            EventSeverity.HIGH if level == "ERROR" else (
+                EventSeverity.MEDIUM if level == "WARN" else EventSeverity.INFO
+            )
+        )
+        
+        evt = CanonicalEvent(
+            event_id=CanonicalEvent.generate_deterministic_id("log", f"{svc}_{level}_{i}", ts or msg[:20]),
+            source_type=EventSourceType.APP_LOG,
+            source_system="application_logs",
+            event_timestamp=ts,
+            severity=sev,
+            category="error" if level in ("ERROR", "FATAL") else "telemetry",
+            service_refs=[svc] if svc else [],
+            title=f"Log [{level}] {svc}",
+            summary=msg[:120],
+            description=msg,
+            evidence_payload={"level": level, "service": svc, "metadata": log.get("metadata", {})},
+        )
+        context.add_canonical_event(evt)
+
+    # 2. Slack Thread -> Canonical Events
+    for i, msg in enumerate(data.get("slack_thread.json", [])):
+        ts = msg.get("timestamp", "")
+        user = msg.get("user", "Unknown")
+        role = msg.get("role", "Team Member")
+        text = msg.get("message", "")
+        
+        actor = resolver.resolve_actor_from_signal(user, platform="slack", role=role)
+        entity_refs = resolver.extract_entity_references(text)
+        
+        is_decision = any(kw in text.lower() for kw in ["let's revert", "rolling back", "agree", "deploying hotfix", "decision:"])
+        
+        evt = CanonicalEvent(
+            event_id=CanonicalEvent.generate_deterministic_id("slack", f"{user}_{i}", ts or text[:20]),
+            source_type=EventSourceType.SLACK,
+            source_system="slack",
+            event_timestamp=ts,
+            severity=EventSeverity.HIGH if is_decision else EventSeverity.INFO,
+            category="decision" if is_decision else "communication",
+            actor=actor,
+            entity_refs=entity_refs,
+            title=f"Slack from {user} ({role})",
+            summary=text[:120],
+            description=text,
+            evidence_payload={"reactions": msg.get("reactions", {})},
+        )
+        context.add_canonical_event(evt)
+
+    # 3. Git Commits -> Canonical Events
+    for i, commit in enumerate(data.get("git_commits.json", [])):
+        sha = commit.get("sha", "")
+        ts = commit.get("timestamp", "")
+        author = commit.get("author", "unknown")
+        msg = commit.get("message", "")
+        
+        actor = resolver.resolve_actor_from_signal(author, platform="github")
+        entity_refs = resolver.extract_entity_references(msg)
+        if sha:
+            entity_refs.append(f"commit:{sha[:7]}")
+
+        evt = CanonicalEvent(
+            event_id=CanonicalEvent.generate_deterministic_id("git", f"{sha}_{i}", ts),
+            source_type=EventSourceType.GITHUB_COMMIT,
+            source_system="github",
+            event_timestamp=ts,
+            severity=EventSeverity.MEDIUM,
+            category="deploy",
+            actor=actor,
+            entity_refs=entity_refs,
+            title=f"Git Commit {sha[:7]}: {msg[:60]}",
+            summary=msg,
+            description=commit.get("diff_summary", msg),
+            evidence_payload={"sha": sha, "files_changed": commit.get("files_changed", [])},
+        )
+        context.add_canonical_event(evt)
+
+    # 4. Alerts -> Canonical Events
+    for i, alert in enumerate(data.get("alerts.json", [])):
+        ts = alert.get("timestamp", "")
+        title = alert.get("title", "Alert")
+        source = alert.get("source", "PagerDuty")
+        sev_str = str(alert.get("severity", "info")).lower()
+        
+        sev = EventSeverity.CRITICAL if "crit" in sev_str or "fatal" in sev_str else (
+            EventSeverity.HIGH if "warn" in sev_str or "error" in sev_str else EventSeverity.INFO
+        )
+
+        evt = CanonicalEvent(
+            event_id=CanonicalEvent.generate_deterministic_id("alert", f"{title}_{i}", ts),
+            source_type=EventSourceType.PAGERDUTY_ALERT,
+            source_system=source,
+            event_timestamp=ts,
+            severity=sev,
+            category="alert",
+            title=f"Alert: {title}",
+            summary=alert.get("description", title)[:120],
+            description=alert.get("description", title),
+            evidence_payload={"source": source, "raw_severity": sev_str},
+        )
+        context.add_canonical_event(evt)
+
+    # 5. Jira Tickets -> Canonical Events
+    for i, ticket in enumerate(data.get("jira_tickets.json", [])):
+        key = ticket.get("key", "")
+        summary = ticket.get("summary", "")
+        ts = ticket.get("created_at", "")
+        
+        evt = CanonicalEvent(
+            event_id=CanonicalEvent.generate_deterministic_id("jira", f"{key}_{i}", ts or key),
+            source_type=EventSourceType.JIRA_TICKET,
+            source_system="jira",
+            event_timestamp=ts,
+            severity=EventSeverity.MEDIUM,
+            category="ticket",
+            entity_refs=[f"ticket:{key}"],
+            service_refs=ticket.get("components", []),
+            title=f"Jira {key}: {summary[:60]}",
+            summary=summary,
+            description=ticket.get("description", summary),
+            evidence_payload={"status": ticket.get("status"), "priority": ticket.get("priority")},
+        )
+        context.add_canonical_event(evt)
+
+
 def run_pipeline_from_sources(
     config: dict,
     progress_callback: Callable[[str, int], None] | None = None,
     verbose: bool = True,
 ) -> dict:
-    """
-    Run the full pipeline using real data sources instead of static files.
-
-    This is the main entry point for the web dashboard / API.
-    It collects data from configured sources, then feeds it into the
-    existing run_pipeline logic.
-
-    Args:
-        config: Source configuration dict (see collect_data_from_sources)
-        progress_callback: Optional function(phase_name, percent) for live status
-        verbose: Print progress to console
-
-    Returns:
-        Same result dict as run_pipeline(), plus sources_used list
-    """
+    """Run the pipeline using real or uploaded data sources."""
     def _progress(phase: str, pct: int):
         if progress_callback:
             try:
@@ -205,20 +351,10 @@ def run_pipeline_from_sources(
         if verbose:
             print(f"  [{pct}%] {phase}")
 
-    _progress("Collecting data from sources", 5)
-
-    # Collect real data
+    _progress("Collecting data from enterprise sources", 5)
     data, sources_used = collect_data_from_sources(config)
+    _progress("Data collection and sanitization complete", 15)
 
-    if verbose:
-        print(f"  Sources used: {', '.join(sources_used) if sources_used else 'none'}")
-        for key, val in data.items():
-            if isinstance(val, list):
-                print(f"    {key}: {len(val)} items")
-
-    _progress("Data collection complete", 15)
-
-    # Now run the standard pipeline with the collected data
     pipeline_start = time.time()
     full_trajectory: list[dict] = []
 
@@ -227,11 +363,7 @@ def run_pipeline_from_sources(
     incident_title = metadata.get("title", config.get("title", "Live Analysis"))
 
     context = IncidentContext(incident_id=incident_id, incident_title=incident_title)
-
-    if verbose:
-        print(f"\n{'='*65}")
-        print(f"  Incident Investigation Pipeline: {incident_title}")
-        print(f"{'='*65}")
+    _populate_canonical_context(context, data)
 
     # Phase 1: Source Analysis
     _progress("Running Log Parser Agent", 20)
@@ -350,22 +482,7 @@ def run_pipeline(
     interactive: bool = False,
 ) -> dict:
     """
-    Run the full agentic post-mortem generation pipeline on an incident.
-
-    Args:
-        incident_dir: Path to the incident data directory
-        verbose: Whether to print progress updates
-        interactive: If True, pauses for human approval of root cause before report generation
-
-    Returns:
-        {
-            "report_markdown": str,
-            "quality_scores": dict,
-            "trajectory": list[dict],
-            "timing": dict,
-            "metadata": dict,
-            "context_snapshot": dict,
-        }
+    Run the full agentic post-mortem generation pipeline on an incident directory.
     """
     pipeline_start = time.time()
     full_trajectory: list[dict] = []
@@ -376,8 +493,9 @@ def run_pipeline(
     incident_id = metadata.get("incident_id", os.path.basename(incident_dir))
     incident_title = metadata.get("title", "Unknown Incident")
 
-    # Initialize shared memory context
+    # Initialize shared memory context and canonical graph
     context = IncidentContext(incident_id=incident_id, incident_title=incident_title)
+    _populate_canonical_context(context, data)
 
     if verbose:
         print(f"\n{'='*65}")
@@ -402,7 +520,6 @@ def run_pipeline(
     log_time = time.time() - t1
     full_trajectory.extend(log_trajectory)
 
-    # Ingest log findings into shared memory
     for err in log_findings.get("key_errors", []):
         context.add_finding(
             source_agent="log_parser",
@@ -427,7 +544,6 @@ def run_pipeline(
     comms_time = time.time() - t2
     full_trajectory.extend(comms_trajectory)
 
-    # Ingest comms findings into shared memory
     for dec in comms_findings.get("key_decisions", []):
         context.add_finding(
             source_agent="comms_analyzer",
@@ -456,7 +572,6 @@ def run_pipeline(
     git_time = time.time() - t3
     full_trajectory.extend(git_trajectory)
 
-    # Ingest git findings into shared memory
     for commit in git_findings.get("suspicious_commits", []):
         context.add_finding(
             source_agent="git_analyzer",
@@ -487,7 +602,6 @@ def run_pipeline(
     timeline_time = time.time() - t4
     full_trajectory.extend(timeline_trajectory)
 
-    # Populate timeline into IncidentContext
     for ev in timeline_result.get("unified_timeline", []):
         context.add_timeline_event(
             timestamp=ev.get("timestamp", ""),
@@ -521,7 +635,7 @@ def run_pipeline(
         print(f"     OK ({rca_time:.1f}s) - Category: [{rc.get('category', 'N/A')}], Confidence: [{rc.get('confidence', 'N/A')}]")
         print(f"     Root Cause: {rc.get('summary', 'N/A')[:90]}...")
 
-    # Optional Human-in-the-Loop Checkpoint (Ground Rules & Control)
+    # Optional Human-in-the-Loop Checkpoint
     if interactive:
         print("\n" + "="*50)
         print("  HUMAN-IN-THE-LOOP CHECKPOINT")
@@ -570,7 +684,6 @@ def run_pipeline(
         print(f"  Pipeline execution successful in {total_time:.1f}s")
         print(f"{'='*65}\n")
 
-    # Record context snapshot into trajectory
     full_trajectory.append({
         "agent": "orchestrator",
         "step": "memory_context_snapshot",

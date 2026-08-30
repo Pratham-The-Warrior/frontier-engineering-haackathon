@@ -71,6 +71,16 @@ async def serve_dashboard():
     }
 
 
+@app.get("/favicon.ico", include_in_schema=False)
+@app.get("/favicon.svg", include_in_schema=False)
+async def serve_favicon():
+    """Serve the Prism SVG favicon."""
+    fav_path = os.path.join(DASHBOARD_DIR, "favicon.svg")
+    if os.path.exists(fav_path):
+        return FileResponse(fav_path, media_type="image/svg+xml")
+    return FileResponse(os.path.join(DASHBOARD_DIR, "index.html"))
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""

@@ -1,0 +1,214 @@
+[
+  {
+    "agent": "log_parser",
+    "step": "tool_preprocessing",
+    "tools_used": [
+      "parse_logs",
+      "filter_by_severity",
+      "find_error_patterns",
+      "detect_anomalies",
+      "summarise_logs"
+    ],
+    "results": {
+      "total_logs": 8,
+      "warnings_and_errors": 5,
+      "error_patterns_found": 3,
+      "anomalies_detected": 1
+    }
+  },
+  {
+    "agent": "log_parser",
+    "step": "llm_analysis",
+    "model": "gpt-4o-mini",
+    "usage": {
+      "prompt_tokens": 100,
+      "completion_tokens": 150,
+      "total_tokens": 250
+    },
+    "latency_seconds": 0.05
+  },
+  {
+    "agent": "comms_analyzer",
+    "step": "llm_analysis",
+    "input_messages": 5,
+    "input_participants": 2
+  },
+  {
+    "agent": "comms_analyzer",
+    "step": "llm_response",
+    "model": "gpt-4o-mini",
+    "usage": {
+      "prompt_tokens": 100,
+      "completion_tokens": 150,
+      "total_tokens": 250
+    },
+    "latency_seconds": 0.05
+  },
+  {
+    "agent": "git_analyzer",
+    "step": "tool_preprocessing",
+    "tools_used": [
+      "parse_commits",
+      "find_suspicious_changes",
+      "detect_diff_risk_patterns"
+    ],
+    "results": {
+      "total_commits": 1,
+      "suspicious_commits": 0,
+      "detected_risk_patterns": 0
+    }
+  },
+  {
+    "agent": "git_analyzer",
+    "step": "forensic_diff_generation",
+    "model": "gpt-4o",
+    "usage": {
+      "prompt_tokens": 100,
+      "completion_tokens": 150,
+      "total_tokens": 250
+    },
+    "latency_seconds": 0.05
+  },
+  {
+    "agent": "timeline_builder",
+    "step": "tool_preprocessing",
+    "tools_used": [
+      "correlate_events",
+      "detect_gaps"
+    ],
+    "results": {
+      "cross_correlations_found": 0,
+      "timeline_gaps_found": 0,
+      "total_source_events": 1
+    }
+  },
+  {
+    "agent": "timeline_builder",
+    "step": "llm_synthesis",
+    "model": "gpt-4o",
+    "usage": {
+      "prompt_tokens": 100,
+      "completion_tokens": 150,
+      "total_tokens": 250
+    },
+    "latency_seconds": 0.05
+  },
+  {
+    "agent": "root_cause_analyzer",
+    "step": "hypothesis_generation",
+    "hypotheses_count": 1,
+    "hypotheses": [
+      "Incident caused by primary service anomaly during recent configuration or code change."
+    ],
+    "latency_seconds": 0.05
+  },
+  {
+    "agent": "root_cause_analyzer",
+    "step": "evidence_validation_tool",
+    "tools_used": [
+      "rank_hypotheses",
+      "check_evidence",
+      "find_corroborating_events"
+    ],
+    "ranked_results": [
+      {
+        "rank": 1,
+        "hypothesis": "Incident caused by primary service anomaly during recent configuration or code c",
+        "score": 1.0,
+        "evidence_strength": "moderate",
+        "supporting_count": 2
+      }
+    ]
+  },
+  {
+    "agent": "root_cause_analyzer",
+    "step": "deep_causal_synthesis",
+    "root_cause_category": "configuration",
+    "confidence": "high",
+    "latency_seconds": 0.05
+  },
+  {
+    "agent": "root_cause_analyzer",
+    "step": "causal_chain_validation_tool",
+    "tools_used": [
+      "assess_causal_chain"
+    ],
+    "chain_valid": false,
+    "overall_confidence": "low",
+    "issues_found": []
+  },
+  {
+    "agent": "report_writer",
+    "step": "report_generation",
+    "model": "gpt-4o",
+    "usage": {
+      "prompt_tokens": 100,
+      "completion_tokens": 150,
+      "total_tokens": 250
+    },
+    "latency_seconds": 0.05,
+    "report_length_chars": 7135
+  },
+  {
+    "agent": "report_writer",
+    "step": "quality_verification",
+    "tools_used": [
+      "check_blameless_language",
+      "validate_report_completeness",
+      "citation_count",
+      "diff_check"
+    ],
+    "blameless_score": 100,
+    "completeness_score": 100,
+    "blameless_violations": 0,
+    "missing_sections": [],
+    "evidence_citations_found": 24,
+    "has_forensic_diff": true
+  },
+  {
+    "agent": "orchestrator",
+    "step": "memory_context_snapshot",
+    "context_snapshot": {
+      "incident_id": "INC-007",
+      "incident_title": "Disk Space Exhaustion From Disabled Log Rotation",
+      "total_findings": 2,
+      "total_timeline_events": 4,
+      "total_canonical_events": 18,
+      "findings_by_agent": {
+        "log_parser": 1,
+        "root_cause_analyzer": 1
+      },
+      "findings_by_category": {
+        "error": 1,
+        "root_cause": 1
+      },
+      "findings_by_severity": {
+        "warning": 1,
+        "critical": 1
+      },
+      "agent_summaries": {},
+      "graph_summary": {
+        "total_nodes": 20,
+        "total_edges": 8,
+        "nodes_by_type": {
+          "error_cluster": 8,
+          "service": 2,
+          "actor": 5,
+          "commit": 1,
+          "alert": 4
+        },
+        "edges_by_relation": {
+          "affects_service": 8
+        }
+      },
+      "registered_services": [
+        "data-pipeline",
+        "monitoring"
+      ],
+      "registered_actors": [
+        "Maya Singh",
+        "AlertBot"
+      ]
+    }
+  }
+]

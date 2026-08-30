@@ -1,0 +1,65 @@
+[
+  {
+    "sha": "a1c2e3f",
+    "full_sha": "a1c2e3f4b5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0",
+    "timestamp": "2025-04-18T11:00:00Z",
+    "author": "Elena Rostova",
+    "author_email": "elena.r@company.com",
+    "message": "PAY-8900: Add read replica routing for historical payment lookups",
+    "files_changed": [
+      "src/db/replica_router.py",
+      "tests/test_replica.py"
+    ],
+    "ticket_refs": [
+      "PAY-8900"
+    ],
+    "diff_summary": "Changed 2 files (+45/-10): Added read replica pool configuration."
+  },
+  {
+    "sha": "f8a9b1c",
+    "full_sha": "f8a9b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8",
+    "timestamp": "2025-04-18T14:05:00Z",
+    "author": "Dave Kumar",
+    "author_email": "dave.k@company.com",
+    "message": "PAY-9042: Optimize payment consumer throughput by increasing batch size to 5000 (#142)",
+    "files_changed": [
+      "src/kafka/consumer_config.py",
+      "src/payment/processor.py"
+    ],
+    "ticket_refs": [
+      "PAY-9042",
+      "INFRA-819"
+    ],
+    "diff_summary": "Changed 2 files (+12/-4): Set max.poll.records=5000 and max.poll.interval.ms=300000 without heartbeat guard."
+  },
+  {
+    "sha": "c4d5e6f",
+    "full_sha": "c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3",
+    "timestamp": "2025-04-18T14:45:00Z",
+    "author": "Marcus Wright",
+    "author_email": "marcus.w@company.com",
+    "message": "INFRA-819: Diagnostic commit - Enable debug logging on Kafka rebalance listeners",
+    "files_changed": [
+      "config/logging.yaml"
+    ],
+    "ticket_refs": [
+      "INFRA-819"
+    ],
+    "diff_summary": "Changed 1 file (+3/-1): Set org.apache.kafka log level to DEBUG."
+  },
+  {
+    "sha": "d3e2a1b",
+    "full_sha": "d3e2a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8",
+    "timestamp": "2025-04-18T15:05:00Z",
+    "author": "Dave Kumar",
+    "author_email": "dave.k@company.com",
+    "message": "PAY-9042: Hotfix - Revert consumer batch size to 100 and enforce 10s heartbeat guard (#143)",
+    "files_changed": [
+      "src/kafka/consumer_config.py"
+    ],
+    "ticket_refs": [
+      "PAY-9042"
+    ],
+    "diff_summary": "Changed 1 file (+5/-3): Restored safe Kafka consumer batch size and heartbeat intervals."
+  }
+]
