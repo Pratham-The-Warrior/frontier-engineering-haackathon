@@ -19,13 +19,13 @@
   {
     "agent": "log_parser",
     "step": "llm_analysis",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 1510,
+      "completion_tokens": 758,
+      "total_tokens": 2268
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 2.94
   },
   {
     "agent": "comms_analyzer",
@@ -36,13 +36,13 @@
   {
     "agent": "comms_analyzer",
     "step": "llm_response",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 741,
+      "completion_tokens": 789,
+      "total_tokens": 1530
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 2.97
   },
   {
     "agent": "git_analyzer",
@@ -61,13 +61,13 @@
   {
     "agent": "git_analyzer",
     "step": "forensic_diff_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 770,
+      "completion_tokens": 823,
+      "total_tokens": 1593
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 2.91
   },
   {
     "agent": "timeline_builder",
@@ -77,30 +77,32 @@
       "detect_gaps"
     ],
     "results": {
-      "cross_correlations_found": 0,
-      "timeline_gaps_found": 0,
-      "total_source_events": 1
+      "cross_correlations_found": 16,
+      "timeline_gaps_found": 1,
+      "total_source_events": 12
     }
   },
   {
     "agent": "timeline_builder",
     "step": "llm_synthesis",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 4948,
+      "completion_tokens": 2295,
+      "total_tokens": 7243
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 6.7
   },
   {
     "agent": "root_cause_analyzer",
     "step": "hypothesis_generation",
-    "hypotheses_count": 1,
+    "hypotheses_count": 3,
     "hypotheses": [
-      "Incident caused by primary service anomaly during recent configuration or code change."
+      "Hypothesis 1: Architectural coupling and lack of multitenancy isolation in the notification system allowed a bulk marketing campaign to exhaust the shared SendGrid API quota, creating in-memory queue saturation that blocked high-priority transactional emails.",
+      "Hypothesis 2: Inadequate governance and lack of cross-departmental visibility between Marketing Operations and Engineering permitted an uncoordinated 50K volume burst against a single unpartitioned external provider endpoint.",
+      "Hypothesis 3: A rushed mitigation deployment (commit a1b2c3d4) removing explicit connection timeouts and forcing synchronous queue processing introduced thread pool exhaustion, triggering a cascading secondary failure of API Gateway 504 timeouts."
     ],
-    "latency_seconds": 0.05
+    "latency_seconds": 1.74
   },
   {
     "agent": "root_cause_analyzer",
@@ -113,19 +115,33 @@
     "ranked_results": [
       {
         "rank": 1,
-        "hypothesis": "Incident caused by primary service anomaly during recent configuration or code c",
+        "hypothesis": "Hypothesis 1: Architectural coupling and lack of multitenancy isolation in the n",
         "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 10
+      },
+      {
+        "rank": 2,
+        "hypothesis": "Hypothesis 2: Inadequate governance and lack of cross-departmental visibility be",
+        "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 5
+      },
+      {
+        "rank": 3,
+        "hypothesis": "Hypothesis 3: A rushed mitigation deployment (commit a1b2c3d4) removing explicit",
+        "score": 0.727,
         "evidence_strength": "moderate",
-        "supporting_count": 2
+        "supporting_count": 10
       }
     ]
   },
   {
     "agent": "root_cause_analyzer",
     "step": "deep_causal_synthesis",
-    "root_cause_category": "configuration",
+    "root_cause_category": "architecture",
     "confidence": "high",
-    "latency_seconds": 0.05
+    "latency_seconds": 5.28
   },
   {
     "agent": "root_cause_analyzer",
@@ -133,21 +149,21 @@
     "tools_used": [
       "assess_causal_chain"
     ],
-    "chain_valid": false,
-    "overall_confidence": "low",
+    "chain_valid": true,
+    "overall_confidence": "high",
     "issues_found": []
   },
   {
     "agent": "report_writer",
     "step": "report_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 9263,
+      "completion_tokens": 3725,
+      "total_tokens": 12988
     },
-    "latency_seconds": 0.05,
-    "report_length_chars": 7135
+    "latency_seconds": 10.31,
+    "report_length_chars": 10964
   },
   {
     "agent": "report_writer",
@@ -162,7 +178,7 @@
     "completeness_score": 100,
     "blameless_violations": 0,
     "missing_sections": [],
-    "evidence_citations_found": 24,
+    "evidence_citations_found": 29,
     "has_forensic_diff": true
   },
   {
@@ -171,19 +187,25 @@
     "context_snapshot": {
       "incident_id": "INC-008",
       "incident_title": "Third-Party API Rate Limiting Cascade",
-      "total_findings": 2,
-      "total_timeline_events": 4,
+      "total_findings": 9,
+      "total_timeline_events": 12,
       "total_canonical_events": 17,
       "findings_by_agent": {
-        "log_parser": 1,
-        "root_cause_analyzer": 1
+        "log_parser": 3,
+        "comms_analyzer": 1,
+        "git_analyzer": 1,
+        "root_cause_analyzer": 4
       },
       "findings_by_category": {
-        "error": 1,
-        "root_cause": 1
+        "error": 3,
+        "decision": 1,
+        "deploy": 1,
+        "root_cause": 1,
+        "contributing_factor": 3
       },
       "findings_by_severity": {
-        "warning": 1,
+        "warning": 6,
+        "info": 2,
         "critical": 1
       },
       "agent_summaries": {},

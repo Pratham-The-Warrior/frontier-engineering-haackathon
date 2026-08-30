@@ -1,19 +1,19 @@
-# Executive Post-Mortem Report: Production Incident
+# Post-Mortem: DNS Resolution Failure After Provider Migration
 
-[![Severity](https://img.shields.io/badge/Severity-P1-e11d48?style=flat-square)](#)
+[![Severity](https://img.shields.io/badge/Severity-SEV1-e11d48?style=flat-square)](#)
 [![Status](https://img.shields.io/badge/Status-RESOLVED-10b981?style=flat-square)](#)
-[![Duration](https://img.shields.io/badge/Duration-23m-6366f1?style=flat-square)](#)
+[![Duration](https://img.shields.io/badge/Duration-38m-6366f1?style=flat-square)](#)
 [![Evidence](https://img.shields.io/badge/Evidence-100%25_Grounded-0284c7?style=flat-square)](#)
 [![Blameless](https://img.shields.io/badge/Culture-Blameless_Verified-8b5cf6?style=flat-square)](#)
 
-> **Blast Radius:** `user-service`, `api-gateway` (68,400 affected requests) | **MTTR:** `15 min after triage`  
-> **Root Cause (1-line):** `Database connection pool exhaustion caused by misconfigured pool timeout parameters in deploy v2.14.0.`
+> **Blast Radius:** `api-gateway, user-service, order-service, internal-db, cache` | **MTTR:** `30 min after root cause identified`
+> **Root Cause (1-line):** `An incomplete DNS migration configuration omitted internal infrastructure zone definitions from the Cloudflare Terraform setup, causing global internal name resolution failures upon automated apply.`
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:gauge.svg?color=%236366f1" width="18"/> Executive Summary
 
-On March 15, 2025, `user-service` experienced database connection pool exhaustion resulting in elevated HTTP 500 error rates for 23 minutes following deploy v2.14.0. The incident was detected via automated PagerDuty latency alerts and mitigated by reverting pool capacity parameters via hotfix commit `e5f6a7b8`. Full service was restored with zero data loss.
+During an infrastructure migration from Route53 to Cloudflare, internal infrastructure DNS zone definitions were omitted from Terraform configuration files `[Git:dns001]`. When the automated Terraform apply executed in production, it cut over authoritative nameservers without these internal zones, resulting in complete service degradation across the API gateway, user service, and order service `[Log:2025-06-15T06:00:00Z]`. The incident was fully resolved 38 minutes later by provisioning the missing internal zones in Cloudflare and validating service recovery `[Slack:2025-06-15T06:38:00Z]`.
 
 ---
 
@@ -21,17 +21,17 @@ On March 15, 2025, `user-service` experienced database connection pool exhaustio
 
 | Risk Dimension | Risk Level | Finding | Evidence |
 |:---|:---:|:---|:---|
-| **Deploy Safety** | [![High](https://img.shields.io/badge/HIGH-f97316?style=flat-square)](#) | Pool size reduction merged without CI config limit validation | `[Git:a1b2c3d4]` |
-| **Circuit Breaking** | [![Critical](https://img.shields.io/badge/CRITICAL-ef4444?style=flat-square)](#) | Upstream gateway lacked fail-open caching during pool timeouts | `[Log:14:05:00]` |
-| **Observability** | [![Low](https://img.shields.io/badge/LOW-22c55e?style=flat-square)](#) | PagerDuty latency monitors triggered within 3 minutes | `[Alert:P1-Latency]` |
+| **Deploy Safety** | [![High](https://img.shields.io/badge/HIGH-f97316?style=flat-square)](#) | Lack of pre-deployment validation for infrastructure-as-code zone completeness. | `[Git:dns001]` |
+| **Circuit Breaking** | [![Critical](https://img.shields.io/badge/CRITICAL-ef4444?style=flat-square)](#) | Insufficient secondary DNS fallback mechanisms across core microservices. | `[Log:2025-06-15T06:00:30Z]` |
+| **Observability** | [![Low](https://img.shields.io/badge/LOW-22c55e?style=flat-square)](#) | PagerDuty and AlertBot rapidly notified the on-call team within 10 seconds of impact. | `[Alerts:2025-06-15T06:00:10Z]` |
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:activity.svg?color=%2306b6d4" width="18"/> Impact
 
-- **Affected Services:** `user-service`, `api-gateway`, `checkout-api`
-- **User Impact:** ~68,400 user requests failed with HTTP 500 / 504 timeouts `[Log:14:05:33]`
-- **Duration:** 23 minutes total (14:02 UTC to 14:25 UTC)
+**Affected Services:** `api-gateway`, `user-service`, `order-service`, `internal-db`, `cache`
+**User Impact:** Complete service degradation affecting all user requests requiring authentication, data retrieval, or order processing.
+**Duration:** 38 minutes (from initial symptom at `06:00:00Z` to full recovery at `06:38:00Z`) `[Log:2025-06-15T06:00:00Z]`, `[Slack:2025-06-15T06:38:00Z]`.
 
 ---
 
@@ -39,71 +39,101 @@ On March 15, 2025, `user-service` experienced database connection pool exhaustio
 
 | Time (UTC) | Source | Event |
 |:---|:---|:---|
-| 14:02 | `[Git:a1b2c3d4]` | Deployment v2.14.0 completed to production `[Git:a1b2c3d4]` |
-| 14:05 | `[Log:user-service]` | Database connection pool exhaustion errors detected `[Log:14:05:00]` |
-| 14:08 | `[Alert:P1-Latency]` | PagerDuty P1 Latency alarm fired for `user-service` `[Alert:P1-Latency]` |
-| 14:10 | `[Slack:#incidents]` | Incident declared by @sarah; war room triage initiated `[Slack:14:10:00]` |
-| 14:18 | `[Slack:#incidents]` | Root cause identified in commit `a1b2c3d4` by @dave `[Slack:14:18:00]` |
-| 14:20 | `[Git:e5f6a7b8]` | Hotfix commit deployed restoring pool size to 50 `[Git:e5f6a7b8]` |
-| 14:25 | `[Log:api-gateway]` | Error rates return to baseline 0.01%; incident resolved `[Log:14:25:00]` |
+| 2025-06-14T16:00:00Z | `Git` | Commit dns001 merged, omitting internal DNS zone definitions. `[Git:dns001]` |
+| 2025-06-15T05:45:00Z | `Git` | Automated Terraform apply executed for Cloudflare DNS configuration. `[Deploy:terraform]` |
+| 2025-06-15T06:00:00Z | `Logs` | API gateway experiences DNS resolution failure for `internal-db.example.internal`. `[Log:2025-06-15T06:00:00Z]` |
+| 2025-06-15T06:00:10Z | `Alerts` | PagerDuty critical alert triggered for DNS Resolution Failures. `[Alerts:2025-06-15T06:00:10Z]` |
+| 2025-06-15T06:01:00Z | `Slack` | AlertBot reports multiple services failing DNS resolution for internal domains. `[Slack:AlertBot:06:01:00Z]` |
+| 2025-06-15T06:05:00Z | `Slack` | Scope narrowed to recent DNS migration changes. `[Slack:Nina:06:03:00Z]` |
+| 2025-06-15T06:08:00Z | `Slack` | Missing internal zone added to Cloudflare. `[Slack:Tom:06:08:00Z]` |
+| 2025-06-15T06:38:00Z | `Slack` | All services confirmed healthy after propagation. `[Slack:Nina:06:38:00Z]` |
+
+<details>
+<summary><b>Raw Correlated Event Log</b> (click to expand)</summary>
+
+- `2025-06-14T16:00:00Z` [Git] Commit dns001 merged in `infra/dns/cloudflare_zones.tf`.
+- `2025-06-15T05:45:00Z` [Git] Terraform apply automated execution.
+- `2025-06-15T06:00:00Z` [Log] api-gateway NXDOMAIN on `internal-db.example.internal`.
+- `2025-06-15T06:00:10Z` [Alert] PagerDuty critical incident created.
+- `2025-06-15T06:01:00Z` [Log] order-service NXDOMAIN on `cache.example.internal`.
+- `2025-06-15T06:08:00Z` [Slack] Infrastructure configuration patched.
+- `2025-06-15T06:38:00Z` [Slack] Incident resolved and verified.
+
+</details>
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:search.svg?color=%23e11d48" width="18"/> Root Cause Analysis
 
-**Root Cause:** Deploy v2.14.0 reduced max connection pool capacity from 50 to 20 without setting acquire timeouts, leading to thread starvation under normal peak traffic `[Log:14:05:00]`.
+**Root Cause:** An incomplete DNS migration configuration omitted internal infrastructure zone definitions (`example.internal`) from the Cloudflare Terraform provider setup due to a lack of automated schema validation, resulting in global internal name resolution failures when applied `[Git:dns001]`, `[Log:2025-06-15T06:00:00Z]`.
 
 **Causal Chain:**
-1. Commit `a1b2c3d4` merged with reduced connection pool settings -> `[Git:a1b2c3d4]`
-2. Traffic spike exhausted active database connection pool -> `[Log:14:05:00]`
-3. Thread starvation caused cascading HTTP 504 timeouts at API gateway -> `[Alert:P1-Latency]`
+1. Commit `dns001` merged with partial DNS migration configuration omitting internal zones `[Git:dns001]`.
+2. Automated Terraform apply executed for Cloudflare DNS configuration, replacing production setup `[Deploy:terraform]`.
+3. API gateway, user service, and order service encountered DNS resolution failures for internal dependencies `[Log:2025-06-15T06:00:00Z]`.
+4. Systemic microservice dependency degradation triggered PagerDuty critical alerts `[Alerts:2025-06-15T06:00:10Z]`.
+
+**Confidence:** High — supported by explicit git commit diff evidence, deployment timeline correlation, and service log error entries.
+
+---
 
 ### <img src="https://api.iconify.design/lucide:file-code-2.svg?color=%238b5cf6" width="18"/> Forensic Code Analysis (Root Cause Diff)
 
-> **Commit:** [`a1b2c3d4`] — *Update database pool configuration*  
-> **Author:** `@sarah-c` | **Primary File:** `src/db/config.py`
+> **Commit:** [`dns001`] — *Prepare DNS migration to Cloudflare*  
+> **Author:** `Infrastructure Team` | **Primary File:** `infra/dns/cloudflare_zones.tf`
 
 ```diff
-- pool_size = 50  # [Git:a1b2c3d4]
-- pool_timeout = 30
-+ pool_size = 20  # 🚨 [CAUSE: Max connections reduced without timeout guard]
-+ pool_timeout = None  # 🚨 [CAUSE: Missing acquire timeout causing thread starvation]
+ resource "cloudflare_zone" "public_primary" {
+   zone   = "example.com"
+   account_id = var.cloudflare_account_id
+ }
+ 
+-# 🚨 CAUSE: Omitted internal DNS zone definition for example.internal
+-# Internal microservices attempting to resolve database.example.internal fail with NXDOMAIN
 ```
 
 #### Code Vulnerability Breakdown:
-* **Line 4 (Critical):** Pool size reduced to 20 without increasing worker count.
-* **Line 5 (Secondary):** `pool_timeout` set to `None` causes requests to block indefinitely.
+* **Line 5 (Critical):** Omission of internal DNS zone definitions (`example.internal`) breaks all internal service resolution once authoritative nameservers switch.
 
-#### Preventative Remediation Patch:
+#### Preventative Remediation Patch
 
 ```diff
-+ pool_size = 50  # [FIX: Restore safe pool size]
-+ pool_timeout = 30  # [FIX: Set 30s acquire timeout guard]
+ resource "cloudflare_zone" "public_primary" {
+   zone   = "example.com"
+   account_id = var.cloudflare_account_id
+ }
+ 
++resource "cloudflare_zone" "internal_primary" {
++  zone       = "example.internal"  # [FIX: Explicitly define internal zone in Cloudflare provider]
++  account_id = var.cloudflare_account_id
++  jump_start = false
++}
 ```
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:layers.svg?color=%230ea5e9" width="18"/> Contributing Factors
 
-- **Missing Configuration Linting:** CI pipeline did not validate minimum connection pool sizing `[Git:a1b2c3d4]`.
-- **Aggressive Pool Shrinking:** Resource conservation optimization was applied without synthetic load soak testing.
-- **Unbounded Wait Queues:** Upstream connection pool requests blocked indefinitely without timeout fail-fast `[Log:14:05:00]`.
+- **Testing Gap:** Lack of pre-deployment validation and integration testing for infrastructure-as-code changes to verify zone completeness before production apply `[Git:dns001]`, `[Slack:2025-06-15T06:05:00Z]`.
+- **Design Flaw:** Insufficient fallback and secondary DNS resolution mechanisms across core microservices when primary external DNS lookups fail `[Log:2025-06-15T06:00:30Z]`.
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:shield-check.svg?color=%2310b981" width="18"/> Prevention Analysis
 
+> *How could this incident have been prevented or detected earlier?*
+
 | Prevention Point | Safeguard | Expected Outcome |
 |:---|:---|:---|
-| **At PR / CI Stage** | Automated config linter for database pool parameters | Prevent misconfigured pool limits from merging |
-| **At Deploy Stage** | Canary deployment with synthetic load soak test | Detect connection exhaustion before 100% rollout |
-| **At Runtime Stage** | Circuit breaker with fast-fail fallback | Prevent API gateway thread starvation |
+| At PR / CI Stage | Automated Terraform plan validation and zone inventory diff checks against existing Route53 records. | Would have flagged the omission of `example.internal` zones prior to merge. |
+| At Deploy Stage | Staged DNS migration rollout with pre- and post-apply DNS resolution smoke tests. | Would have prevented global production application of the incomplete zone file. |
+| At Runtime Stage | Local DNS caching and fallback resolution libraries in core microservices. | Blast radius limited during upstream DNS provider changes. |
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:wrench.svg?color=%2364748b" width="18"/> Resolution
 
-The incident was mitigated by deploying hotfix commit `e5f6a7b8` which restored `pool_size = 50` and enforced `pool_timeout = 30`. Database connection metrics immediately normalized.
+The incident was resolved by manually provisioning the missing `example.internal` DNS zone within the Cloudflare account `[Slack:2025-06-15T06:08:00Z]`. Once propagated, dependent microservices re-established connectivity to internal databases and caches, returning all systems to full operational health `[Slack:2025-06-15T06:38:00Z]`.
 
 ---
 
@@ -111,22 +141,22 @@ The incident was mitigated by deploying hotfix commit `e5f6a7b8` which restored 
 
 | Priority | Type | Action | Owner | Est. |
 |:---|:---|:---|:---|:---|
-| **P0** | Prevent | Implement CI lint rule preventing database `pool_size < 30` or `pool_timeout is None` | @sre-team | 2d |
-| **P1** | Detect | Add Prometheus alert rule for connection pool utilization > 80% | @observability | 1d |
-| **P2** | Mitigate | Enable circuit breaker pattern with cached fallbacks in `api-gateway` | @platform | 3d |
+| **P0** | Prevent | Implement automated Terraform plan validation comparing Route53 zone inventory against Cloudflare configuration. | Infra Team | 3 days |
+| **P1** | Detect | Add pre- and post-apply DNS resolution smoke tests to CI/CD pipeline deployment steps. | SRE Team | 5 days |
+| **P2** | Mitigate | Configure local DNS fallback and caching layers in core microservices (`api-gateway`, `user-service`, `order-service`). | Core Services | 10 days |
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:book-open.svg?color=%236366f1" width="18"/> Lessons Learned
 
-- Database connection limits must be guarded by automated CI validation rather than manual code review.
-- Systemic fail-fast timeouts prevent single-service thread exhaustion from taking down edge gateways.
+- Infrastructure migrations affecting core naming resolution must maintain parity verification between old and new providers before cutover.
+- Microservices should not rely entirely on externalized authoritative nameservers for critical internal dependency resolution without local fallbacks.
 
 ## What Went Well
 
-- Automated PagerDuty alarms fired within 3 minutes of the initial error spike.
-- Rollback hotfix was verified, built, and deployed in under 7 minutes once identified.
+- PagerDuty and AlertBot notified the on-call team within 10 seconds of initial failure.
+- Cross-functional investigation quickly scoped the failure to internal `.example.internal` domains.
 
 ## What Could Be Improved
 
-- Pre-deployment staging environments should run automated stress tests matching production traffic volume.
+- Infrastructure pull requests lacked automated validation checks for completeness of migrated DNS zones.

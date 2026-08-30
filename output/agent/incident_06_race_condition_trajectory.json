@@ -19,13 +19,13 @@
   {
     "agent": "log_parser",
     "step": "llm_analysis",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 1349,
+      "completion_tokens": 668,
+      "total_tokens": 2017
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 2.66
   },
   {
     "agent": "comms_analyzer",
@@ -36,13 +36,13 @@
   {
     "agent": "comms_analyzer",
     "step": "llm_response",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 887,
+      "completion_tokens": 1051,
+      "total_tokens": 1938
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 3.46
   },
   {
     "agent": "git_analyzer",
@@ -61,13 +61,13 @@
   {
     "agent": "git_analyzer",
     "step": "forensic_diff_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 773,
+      "completion_tokens": 888,
+      "total_tokens": 1661
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 3.44
   },
   {
     "agent": "timeline_builder",
@@ -77,30 +77,32 @@
       "detect_gaps"
     ],
     "results": {
-      "cross_correlations_found": 0,
-      "timeline_gaps_found": 0,
-      "total_source_events": 1
+      "cross_correlations_found": 21,
+      "timeline_gaps_found": 1,
+      "total_source_events": 15
     }
   },
   {
     "agent": "timeline_builder",
     "step": "llm_synthesis",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 5025,
+      "completion_tokens": 1951,
+      "total_tokens": 6976
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 6.61
   },
   {
     "agent": "root_cause_analyzer",
     "step": "hypothesis_generation",
-    "hypotheses_count": 1,
+    "hypotheses_count": 3,
     "hypotheses": [
-      "Incident caused by primary service anomaly during recent configuration or code change."
+      "Hypothesis 1: The deployment at 11:00:00Z introduced application logic relying on a non-atomic check-then-act pattern for idempotency (TOCTOU race condition), which failed under the high concurrency of the flash sale when multiple threads simultaneously verified and initiated payments for the same order before the database state could be updated.",
+      "Hypothesis 2: The payment service lacked distributed locking mechanisms (such as Redis locks) or strict database-level constraints prior to deployment, assuming single-threaded execution or relying solely on slow application-level queries to prevent duplicates, which collapsed under the abrupt traffic spike of the flash sale.",
+      "Hypothesis 3: A cascading concurrency failure occurred because the application code failed to handle database isolation levels and transaction boundaries correctly, allowing parallel database transactions to read the same pre-charge state concurrently and commit duplicate billing entries before any serialization anomaly forced a rollback."
     ],
-    "latency_seconds": 0.05
+    "latency_seconds": 2.83
   },
   {
     "agent": "root_cause_analyzer",
@@ -113,19 +115,33 @@
     "ranked_results": [
       {
         "rank": 1,
-        "hypothesis": "Incident caused by primary service anomaly during recent configuration or code c",
+        "hypothesis": "Hypothesis 1: The deployment at 11:00:00Z introduced application logic relying o",
         "score": 1.0,
-        "evidence_strength": "moderate",
-        "supporting_count": 2
+        "evidence_strength": "strong",
+        "supporting_count": 6
+      },
+      {
+        "rank": 2,
+        "hypothesis": "Hypothesis 2: The payment service lacked distributed locking mechanisms (such as",
+        "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 7
+      },
+      {
+        "rank": 3,
+        "hypothesis": "Hypothesis 3: A cascading concurrency failure occurred because the application c",
+        "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 7
       }
     ]
   },
   {
     "agent": "root_cause_analyzer",
     "step": "deep_causal_synthesis",
-    "root_cause_category": "configuration",
+    "root_cause_category": "race_condition",
     "confidence": "high",
-    "latency_seconds": 0.05
+    "latency_seconds": 4.39
   },
   {
     "agent": "root_cause_analyzer",
@@ -133,21 +149,21 @@
     "tools_used": [
       "assess_causal_chain"
     ],
-    "chain_valid": false,
-    "overall_confidence": "low",
+    "chain_valid": true,
+    "overall_confidence": "high",
     "issues_found": []
   },
   {
     "agent": "report_writer",
     "step": "report_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 8416,
+      "completion_tokens": 3833,
+      "total_tokens": 12249
     },
-    "latency_seconds": 0.05,
-    "report_length_chars": 7135
+    "latency_seconds": 11.13,
+    "report_length_chars": 11946
   },
   {
     "agent": "report_writer",
@@ -162,7 +178,7 @@
     "completeness_score": 100,
     "blameless_violations": 0,
     "missing_sections": [],
-    "evidence_citations_found": 24,
+    "evidence_citations_found": 35,
     "has_forensic_diff": true
   },
   {
@@ -171,19 +187,25 @@
     "context_snapshot": {
       "incident_id": "INC-006",
       "incident_title": "Race Condition in Payment Processing",
-      "total_findings": 2,
-      "total_timeline_events": 4,
+      "total_findings": 8,
+      "total_timeline_events": 10,
       "total_canonical_events": 20,
       "findings_by_agent": {
-        "log_parser": 1,
-        "root_cause_analyzer": 1
+        "log_parser": 3,
+        "comms_analyzer": 1,
+        "git_analyzer": 1,
+        "root_cause_analyzer": 3
       },
       "findings_by_category": {
-        "error": 1,
-        "root_cause": 1
+        "error": 3,
+        "decision": 1,
+        "deploy": 1,
+        "root_cause": 1,
+        "contributing_factor": 2
       },
       "findings_by_severity": {
-        "warning": 1,
+        "warning": 5,
+        "info": 2,
         "critical": 1
       },
       "agent_summaries": {},

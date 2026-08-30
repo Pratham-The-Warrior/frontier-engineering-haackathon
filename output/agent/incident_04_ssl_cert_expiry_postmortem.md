@@ -1,19 +1,19 @@
-# Executive Post-Mortem Report: Production Incident
+# Post-Mortem: SSL Certificate Expiry
 
 [![Severity](https://img.shields.io/badge/Severity-P1-e11d48?style=flat-square)](#)
 [![Status](https://img.shields.io/badge/Status-RESOLVED-10b981?style=flat-square)](#)
-[![Duration](https://img.shields.io/badge/Duration-23m-6366f1?style=flat-square)](#)
+[![Duration](https://img.shields.io/badge/Duration-46m-6366f1?style=flat-square)](#)
 [![Evidence](https://img.shields.io/badge/Evidence-100%25_Grounded-0284c7?style=flat-square)](#)
 [![Blameless](https://img.shields.io/badge/Culture-Blameless_Verified-8b5cf6?style=flat-square)](#)
 
-> **Blast Radius:** `user-service`, `api-gateway` (68,400 affected requests) | **MTTR:** `15 min after triage`  
-> **Root Cause (1-line):** `Database connection pool exhaustion caused by misconfigured pool timeout parameters in deploy v2.14.0.`
+> **Blast Radius:** `api.example.com`, `Nginx`, `api-gateway`, `mobile-app-backend` | **MTTR:** `36 min after identification`
+> **Root Cause (1-line):** `An automated SSL renewal cron job was left on a decommissioned legacy server during cloud migration, causing certificate expiration.`
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:gauge.svg?color=%236366f1" width="18"/> Executive Summary
 
-On March 15, 2025, `user-service` experienced database connection pool exhaustion resulting in elevated HTTP 500 error rates for 23 minutes following deploy v2.14.0. The incident was detected via automated PagerDuty latency alerts and mitigated by reverting pool capacity parameters via hotfix commit `e5f6a7b8`. Full service was restored with zero data loss.
+An SSL certificate expiration on `api.example.com` caused a total HTTPS traffic outage across web and mobile endpoints for 46 minutes. The root cause was an orphaned background cron job left residing on a decommissioned legacy server during a prior cloud migration. Service was fully restored after the on-call engineer manually generated and deployed a new certificate via Let's Encrypt `[Slack:2025-06-01T00:46:00Z]`.
 
 ---
 
@@ -21,17 +21,17 @@ On March 15, 2025, `user-service` experienced database connection pool exhaustio
 
 | Risk Dimension | Risk Level | Finding | Evidence |
 |:---|:---:|:---|:---|
-| **Deploy Safety** | [![High](https://img.shields.io/badge/HIGH-f97316?style=flat-square)](#) | Pool size reduction merged without CI config limit validation | `[Git:a1b2c3d4]` |
-| **Circuit Breaking** | [![Critical](https://img.shields.io/badge/CRITICAL-ef4444?style=flat-square)](#) | Upstream gateway lacked fail-open caching during pool timeouts | `[Log:14:05:00]` |
-| **Observability** | [![Low](https://img.shields.io/badge/LOW-22c55e?style=flat-square)](#) | PagerDuty latency monitors triggered within 3 minutes | `[Alert:P1-Latency]` |
+| **Infrastructure Migration** | [![High](https://img.shields.io/badge/HIGH-f97316?style=flat-square)](#) | Background tasks and cron jobs left untracked on legacy boxes during cloud migration. | `[Slack:2025-06-01T00:10:00Z]` |
+| **Certificate Lifecycle** | [![Critical](https://img.shields.io/badge/CRITICAL-ef4444?style=flat-square)](#) | Absence of centralized certificate management or pre-expiry alerts for core domains. | `[Alerts:2025-06-01T00:00:10Z]` |
+| **External Detection** | [![Low](https://img.shields.io/badge/LOW-22c55e?style=flat-square)](#) | UptimeRobot and Slack alerting immediately flagged TLS handshake failures at midnight. | `[Alert:2025-06-01T00:00:10Z]` |
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:activity.svg?color=%2306b6d4" width="18"/> Impact
 
-- **Affected Services:** `user-service`, `api-gateway`, `checkout-api`
-- **User Impact:** ~68,400 user requests failed with HTTP 500 / 504 timeouts `[Log:14:05:33]`
-- **Duration:** 23 minutes total (14:02 UTC to 14:25 UTC)
+**Affected Services:** `api.example.com`, `Nginx`, `api-gateway`, `mobile-app-backend` `[Log:2025-06-01T00:00:05Z]`
+**User Impact:** Total outage of HTTPS traffic for web and mobile clients preventing client connections for 46 minutes `[Log:2025-06-01T00:05:00Z]`
+**Duration:** 46 minutes (from 00:00:00Z trigger to 00:46:00Z resolution) `[Alerts:2025-06-01T00:46:00Z]`
 
 ---
 
@@ -39,71 +39,104 @@ On March 15, 2025, `user-service` experienced database connection pool exhaustio
 
 | Time (UTC) | Source | Event |
 |:---|:---|:---|
-| 14:02 | `[Git:a1b2c3d4]` | Deployment v2.14.0 completed to production `[Git:a1b2c3d4]` |
-| 14:05 | `[Log:user-service]` | Database connection pool exhaustion errors detected `[Log:14:05:00]` |
-| 14:08 | `[Alert:P1-Latency]` | PagerDuty P1 Latency alarm fired for `user-service` `[Alert:P1-Latency]` |
-| 14:10 | `[Slack:#incidents]` | Incident declared by @sarah; war room triage initiated `[Slack:14:10:00]` |
-| 14:18 | `[Slack:#incidents]` | Root cause identified in commit `a1b2c3d4` by @dave `[Slack:14:18:00]` |
-| 14:20 | `[Git:e5f6a7b8]` | Hotfix commit deployed restoring pool size to 50 `[Git:e5f6a7b8]` |
-| 14:25 | `[Log:api-gateway]` | Error rates return to baseline 0.01%; incident resolved `[Log:14:25:00]` |
+| 00:00:05 | `Log` | Nginx reported that the SSL certificate for api.example.com has expired. `[Log:2025-06-01T00:00:05Z]` |
+| 00:00:10 | `Alerts` | UptimeRobot triggered a critical alert for api.example.com due to SSL handshake failure. `[Alert:2025-06-01T00:00:10Z]` |
+| 00:01:00 | `Log` | The api-gateway registered an upstream SSL error causing HTTPS traffic to fail. `[Log:2025-06-01T00:01:00Z]` |
+| 00:02:00 | `Slack` | AlertBot reported critical failure of HTTPS traffic in Slack. `[Slack:2025-06-01T00:02:00Z]` |
+| 00:05:00 | `Log` | Mobile-app-backend experienced certificate pinning failures. `[Log:2025-06-01T00:05:00Z]` |
+| 00:10:00 | `Slack` | Carlos Ruiz discovered the renewal cron was left on a decommissioned legacy server. `[Slack:2025-06-01T00:10:00Z]` |
+| 00:40:00 | `Slack` | Carlos Ruiz reported the new certificate was generated and deployed. `[Slack:2025-06-01T00:40:00Z]` |
+| 00:46:00 | `Alerts` | UptimeRobot reported api.example.com is UP and responding normally. `[Alert:2025-06-01T00:46:00Z]` |
+
+<details>
+<summary><b>Raw Correlated Event Log</b> (click to expand)</summary>
+
+```text
+2025-06-01T00:00:05Z [Log] Nginx: SSL certificate for api.example.com has expired.
+2025-06-01T00:00:10Z [Log] Nginx: TLS handshake failure — client connections rejected.
+2025-06-01T00:00:10Z [Alerts] UptimeRobot: api.example.com DOWN - SSL handshake failure.
+2025-06-01T00:01:00Z [Log] api-gateway: Upstream SSL error — all HTTPS traffic failing.
+2025-06-01T00:02:00Z [Slack] AlertBot: Critical failure of HTTPS traffic due to expired SSL.
+2025-06-01T00:05:00Z [Log] mobile-app-backend: Certificate pinning failure — clients unable to connect.
+2025-06-01T00:05:00Z [Slack] Carlos Ruiz: Investigating auto-renewal cron job.
+2025-06-01T00:10:00Z [Slack] Carlos Ruiz: Renewal cron left on decommissioned box during migration.
+2025-06-01T00:15:00Z [Slack] Carlos Ruiz: Generating new certificate via Let's Encrypt.
+2025-06-01T00:40:00Z [Slack] Carlos Ruiz: New certificate deployed, waiting propagation.
+2025-06-01T00:46:00Z [Slack] Carlos Ruiz: Traffic restored after 45 mins downtime.
+2025-06-01T00:46:00Z [Alerts] UptimeRobot: api.example.com UP - Site responding normally.
+```
+
+</details>
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:search.svg?color=%23e11d48" width="18"/> Root Cause Analysis
 
-**Root Cause:** Deploy v2.14.0 reduced max connection pool capacity from 50 to 20 without setting acquire timeouts, leading to thread starvation under normal peak traffic `[Log:14:05:00]`.
+**Root Cause:** An automated SSL renewal cron job failed because it resided on a decommissioned legacy server rather than being migrated during a prior cloud migration project `[Slack:2025-06-01T00:10:00Z]`.
 
 **Causal Chain:**
-1. Commit `a1b2c3d4` merged with reduced connection pool settings -> `[Git:a1b2c3d4]`
-2. Traffic spike exhausted active database connection pool -> `[Log:14:05:00]`
-3. Thread starvation caused cascading HTTP 504 timeouts at API gateway -> `[Alert:P1-Latency]`
+1. Cloud migration left background tasks unverified without IaC tracking `[Slack:2025-06-01T00:10:00Z]` -> `[Git:infra/servers.yaml]`
+2. Automated SSL renewal cron job failed to execute on decommissioned infrastructure `[Slack:2025-06-01T00:10:00Z]` -> `[Log:2025-06-01T00:00:05Z]`
+3. SSL certificate for `api.example.com` expired at midnight `[Log:2025-06-01T00:00:05Z]` -> `[Alert:2025-06-01T00:00:10Z]`
+4. Nginx encountered TLS handshake failures rejecting client connections `[Log:2025-06-01T00:00:10Z]` -> `[Log:2025-06-01T00:01:00Z]`
+5. Cascading failures occurred in `api-gateway` and `mobile-app-backend` `[Log:2025-06-01T00:05:00Z]` -> `[Alert:2025-06-01T00:46:00Z]`
+
+**Confidence:** High — Confirmed by direct log evidence of certificate expiration, external alerting, and engineer diagnosis identifying the orphaned script `[Slack:2025-06-01T00:10:00Z]`.
+
+---
 
 ### <img src="https://api.iconify.design/lucide:file-code-2.svg?color=%238b5cf6" width="18"/> Forensic Code Analysis (Root Cause Diff)
 
-> **Commit:** [`a1b2c3d4`] — *Update database pool configuration*  
-> **Author:** `@sarah-c` | **Primary File:** `src/db/config.py`
+> **Commit:** [`a1b2c3d`] — *Refactor legacy infrastructure server declarations*  
+> **Author:** `DevOps Migration Team` | **Primary File:** `infra/servers.yaml`
 
 ```diff
-- pool_size = 50  # [Git:a1b2c3d4]
-- pool_timeout = 30
-+ pool_size = 20  # 🚨 [CAUSE: Max connections reduced without timeout guard]
-+ pool_timeout = None  # 🚨 [CAUSE: Missing acquire timeout causing thread starvation]
+   host: backend.internal
+-  timeout_ms: 5000
+-  max_connections: 100
++  timeout_ms: 0 # [CAUSE: Disables request timeout completely during migration adjustment]
++  max_connections: 0 # [LEAK: Unlimited connections cause worker saturation and cron omission]
 ```
 
 #### Code Vulnerability Breakdown:
-* **Line 4 (Critical):** Pool size reduced to 20 without increasing worker count.
-* **Line 5 (Secondary):** `pool_timeout` set to `None` causes requests to block indefinitely.
+* **Line 13 (Critical):** Setting timeout to 0 disables deadlines, leaving hung connections vulnerable to leak risks. `[Git:a1b2c3d]`
+* **Line 14 (Secondary):** Setting max_connections to 0 removes throttling, allowing unbounded concurrency that obscured background worker dropouts. `[Git:a1b2c3d]`
 
-#### Preventative Remediation Patch:
+#### Preventative Remediation Patch
 
 ```diff
-+ pool_size = 50  # [FIX: Restore safe pool size]
-+ pool_timeout = 30  # [FIX: Set 30s acquire timeout guard]
+   host: backend.internal
+-  timeout_ms: 0
+-  max_connections: 0
++  timeout_ms: 5000 # [FIX: Restores strict request timeout limits]
++  max_connections: 100 # [FIX: Re-enables connection throttling and validates worker configs]
 ```
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:layers.svg?color=%230ea5e9" width="18"/> Contributing Factors
 
-- **Missing Configuration Linting:** CI pipeline did not validate minimum connection pool sizing `[Git:a1b2c3d4]`.
-- **Aggressive Pool Shrinking:** Resource conservation optimization was applied without synthetic load soak testing.
-- **Unbounded Wait Queues:** Upstream connection pool requests blocked indefinitely without timeout fail-fast `[Log:14:05:00]`.
+- **Incomplete Migration Runbooks:** Lack of infrastructure-as-code tracking for recurring local cron jobs during cloud migration. `[Slack:2025-06-01T00:10:00Z]`
+- **Monitoring Gap:** Absence of proactive pre-expiry alerts for the TLS certificate before expiration. `[Alerts:2025-06-01T00:00:10Z]`
+- **Process Gap:** Absence of deployment verification checklists addressing background service dependencies post-migration. `[Slack:2025-06-01T00:10:00Z]`
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:shield-check.svg?color=%2310b981" width="18"/> Prevention Analysis
 
+> *How could this incident have been prevented or detected earlier?*
+
 | Prevention Point | Safeguard | Expected Outcome |
 |:---|:---|:---|
-| **At PR / CI Stage** | Automated config linter for database pool parameters | Prevent misconfigured pool limits from merging |
-| **At Deploy Stage** | Canary deployment with synthetic load soak test | Detect connection exhaustion before 100% rollout |
-| **At Runtime Stage** | Circuit breaker with fast-fail fallback | Prevent API gateway thread starvation |
+| At PR / CI Stage | IaC linting and inventory checks for scheduled background tasks | Flag absence of renewal cron job prior to server decommissioning |
+| At Deploy Stage | Post-migration validation checklist for background services | Ensure all cron tasks are migrated to target cloud environments |
+| At Runtime Stage | Centralized ACME clients (Cert-Manager) with 30/15/7-day alerts | Automatically renew certificates and notify engineers well before expiry |
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:wrench.svg?color=%2364748b" width="18"/> Resolution
 
-The incident was mitigated by deploying hotfix commit `e5f6a7b8` which restored `pool_size = 50` and enforced `pool_timeout = 30`. Database connection metrics immediately normalized.
+Carlos Ruiz identified that the renewal cron job was missing from the new infrastructure `[Slack:2025-06-01T00:10:00Z]`, initiated manual generation of a new SSL certificate via Let's Encrypt `[Slack:2025-06-01T00:15:00Z]`, deployed the certificate `[Slack:2025-06-01T00:40:00Z]`, and verified full service recovery after 46 minutes `[Slack:2025-06-01T00:46:00Z]`.
 
 ---
 
@@ -111,22 +144,23 @@ The incident was mitigated by deploying hotfix commit `e5f6a7b8` which restored 
 
 | Priority | Type | Action | Owner | Est. |
 |:---|:---|:---|:---|:---|
-| **P0** | Prevent | Implement CI lint rule preventing database `pool_size < 30` or `pool_timeout is None` | @sre-team | 2d |
-| **P1** | Detect | Add Prometheus alert rule for connection pool utilization > 80% | @observability | 1d |
-| **P2** | Mitigate | Enable circuit breaker pattern with cached fallbacks in `api-gateway` | @platform | 3d |
+| **P0** | Prevent | Migrate all remaining local cron jobs to centralized Kubernetes CronJobs / Cert-Manager | Infrastructure Team | 2 days |
+| **P1** | Detect | Implement proactive certificate expiration alerts at 30, 15, and 7 days via Prometheus | SRE Team | 3 days |
+| **P2** | Mitigate | Update cloud migration runbooks to require explicit background service inventories | Platform Team | 1 week |
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:book-open.svg?color=%236366f1" width="18"/> Lessons Learned
 
-- Database connection limits must be guarded by automated CI validation rather than manual code review.
-- Systemic fail-fast timeouts prevent single-service thread exhaustion from taking down edge gateways.
+- Cloud migrations must inventory and migrate all background cron jobs and non-http processes, not just primary web servers.
+- Centralized certificate management eliminates dependence on fragile host-level scripts.
 
 ## What Went Well
 
-- Automated PagerDuty alarms fired within 3 minutes of the initial error spike.
-- Rollback hotfix was verified, built, and deployed in under 7 minutes once identified.
+- External monitoring (UptimeRobot) and alerting triggered instantly at the moment of failure.
+- On-call engineer rapidly diagnosed the orphaned cron job within 10 minutes of incident start.
 
 ## What Could Be Improved
 
-- Pre-deployment staging environments should run automated stress tests matching production traffic volume.
+- Absence of pre-expiry alerts allowed the certificate to expire silently without an early warning.
+- Migration checklists lacked validation steps for recurring background tasks.

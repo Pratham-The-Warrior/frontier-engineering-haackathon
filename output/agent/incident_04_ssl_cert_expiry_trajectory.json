@@ -19,13 +19,13 @@
   {
     "agent": "log_parser",
     "step": "llm_analysis",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 1670,
+      "completion_tokens": 770,
+      "total_tokens": 2440
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 2.78
   },
   {
     "agent": "comms_analyzer",
@@ -36,13 +36,13 @@
   {
     "agent": "comms_analyzer",
     "step": "llm_response",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 762,
+      "completion_tokens": 910,
+      "total_tokens": 1672
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 3.15
   },
   {
     "agent": "git_analyzer",
@@ -61,13 +61,13 @@
   {
     "agent": "git_analyzer",
     "step": "forensic_diff_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 754,
+      "completion_tokens": 725,
+      "total_tokens": 1479
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 19.05
   },
   {
     "agent": "timeline_builder",
@@ -77,30 +77,32 @@
       "detect_gaps"
     ],
     "results": {
-      "cross_correlations_found": 0,
-      "timeline_gaps_found": 0,
-      "total_source_events": 1
+      "cross_correlations_found": 9,
+      "timeline_gaps_found": 2,
+      "total_source_events": 12
     }
   },
   {
     "agent": "timeline_builder",
     "step": "llm_synthesis",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 4750,
+      "completion_tokens": 1953,
+      "total_tokens": 6703
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 6.14
   },
   {
     "agent": "root_cause_analyzer",
     "step": "hypothesis_generation",
-    "hypotheses_count": 1,
+    "hypotheses_count": 3,
     "hypotheses": [
-      "Incident caused by primary service anomaly during recent configuration or code change."
+      "Hypothesis 1: The automated SSL renewal cron job failed to execute due to infrastructure drift, specifically because the automation script was left residing on a decommissioned legacy server rather than being migrated to the new cloud environment or centralized certificate management platform during the previous migration project.",
+      "Hypothesis 2: Incomplete cloud migration runbooks and lack of infrastructure-as-code (IaC) verification left a silent orphan cron job responsible for TLS certificate lifecycle management, creating a single point of failure that lacked centralized alerting or visibility until the certificate naturally expired.",
+      "Hypothesis 3: A systemic failure in the deployment verification checklist caused post-migration validation to omit scheduled cron jobs and background workers, leading to untracked dependencies on legacy infrastructure that only manifested as catastrophic outages upon certificate expiration."
     ],
-    "latency_seconds": 0.05
+    "latency_seconds": 1.93
   },
   {
     "agent": "root_cause_analyzer",
@@ -113,19 +115,33 @@
     "ranked_results": [
       {
         "rank": 1,
-        "hypothesis": "Incident caused by primary service anomaly during recent configuration or code c",
+        "hypothesis": "Hypothesis 1: The automated SSL renewal cron job failed to execute due to infras",
         "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 9
+      },
+      {
+        "rank": 2,
+        "hypothesis": "Hypothesis 2: Incomplete cloud migration runbooks and lack of infrastructure-as-",
+        "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 10
+      },
+      {
+        "rank": 3,
+        "hypothesis": "Hypothesis 3: A systemic failure in the deployment verification checklist caused",
+        "score": 0.7,
         "evidence_strength": "moderate",
-        "supporting_count": 2
+        "supporting_count": 9
       }
     ]
   },
   {
     "agent": "root_cause_analyzer",
     "step": "deep_causal_synthesis",
-    "root_cause_category": "configuration",
+    "root_cause_category": "infrastructure",
     "confidence": "high",
-    "latency_seconds": 0.05
+    "latency_seconds": 4.83
   },
   {
     "agent": "root_cause_analyzer",
@@ -133,21 +149,21 @@
     "tools_used": [
       "assess_causal_chain"
     ],
-    "chain_valid": false,
-    "overall_confidence": "low",
+    "chain_valid": true,
+    "overall_confidence": "high",
     "issues_found": []
   },
   {
     "agent": "report_writer",
     "step": "report_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 8424,
+      "completion_tokens": 3617,
+      "total_tokens": 12041
     },
-    "latency_seconds": 0.05,
-    "report_length_chars": 7135
+    "latency_seconds": 9.86,
+    "report_length_chars": 10537
   },
   {
     "agent": "report_writer",
@@ -162,7 +178,7 @@
     "completeness_score": 100,
     "blameless_violations": 0,
     "missing_sections": [],
-    "evidence_citations_found": 24,
+    "evidence_citations_found": 33,
     "has_forensic_diff": true
   },
   {
@@ -171,19 +187,25 @@
     "context_snapshot": {
       "incident_id": "INC-004",
       "incident_title": "SSL Certificate Expiry",
-      "total_findings": 2,
-      "total_timeline_events": 4,
+      "total_findings": 10,
+      "total_timeline_events": 12,
       "total_canonical_events": 15,
       "findings_by_agent": {
-        "log_parser": 1,
-        "root_cause_analyzer": 1
+        "log_parser": 4,
+        "comms_analyzer": 1,
+        "git_analyzer": 1,
+        "root_cause_analyzer": 4
       },
       "findings_by_category": {
-        "error": 1,
-        "root_cause": 1
+        "error": 4,
+        "decision": 1,
+        "deploy": 1,
+        "root_cause": 1,
+        "contributing_factor": 3
       },
       "findings_by_severity": {
-        "warning": 1,
+        "warning": 7,
+        "info": 2,
         "critical": 1
       },
       "agent_summaries": {},

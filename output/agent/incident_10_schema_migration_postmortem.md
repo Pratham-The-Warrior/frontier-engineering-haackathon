@@ -1,19 +1,19 @@
-# Executive Post-Mortem Report: Production Incident
+# Post-Mortem: Data Pipeline Corruption From Out-of-Order Schema Migration
 
-[![Severity](https://img.shields.io/badge/Severity-P1-e11d48?style=flat-square)](#)
+[![Severity](https://img.shields.io/badge/Severity-SEV1-e11d48?style=flat-square)](#)
 [![Status](https://img.shields.io/badge/Status-RESOLVED-10b981?style=flat-square)](#)
-[![Duration](https://img.shields.io/badge/Duration-23m-6366f1?style=flat-square)](#)
+[![Duration](https://img.shields.io/badge/Duration-305m-6366f1?style=flat-square)](#)
 [![Evidence](https://img.shields.io/badge/Evidence-100%25_Grounded-0284c7?style=flat-square)](#)
 [![Blameless](https://img.shields.io/badge/Culture-Blameless_Verified-8b5cf6?style=flat-square)](#)
 
-> **Blast Radius:** `user-service`, `api-gateway` (68,400 affected requests) | **MTTR:** `15 min after triage`  
-> **Root Cause (1-line):** `Database connection pool exhaustion caused by misconfigured pool timeout parameters in deploy v2.14.0.`
+> **Blast Radius:** `migration-runner, database, data-pipeline, reporting-service, analytics dashboards` | **MTTR:** `130 min after root cause identified`
+> **Root Cause (1-line):** `An out-of-order schema migration sequence numbering defect caused migration 043 to reference a function defined in migration 044, leading to a partial rollback and unpopulated status data that corrupted downstream ETL pipelines.`
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:gauge.svg?color=%236366f1" width="18"/> Executive Summary
 
-On March 15, 2025, `user-service` experienced database connection pool exhaustion resulting in elevated HTTP 500 error rates for 23 minutes following deploy v2.14.0. The incident was detected via automated PagerDuty latency alerts and mitigated by reverting pool capacity parameters via hotfix commit `e5f6a7b8`. Full service was restored with zero data loss.
+An out-of-order database migration sequence numbering defect caused migration 043 to reference a function defined in migration 044, leading to a partial deployment failure and unpopulated status column data `[Log:2025-09-15T03:01:05Z]`. This unpopulated schema state cascaded into critical ETL NOT NULL constraint violations and reporting division-by-zero errors for over three hours `[Log:2025-09-15T06:00:00Z], [Log:2025-09-15T06:30:00Z]`. The incident was fully resolved when an engineer manually executed the correct migration sequence and re-ran the pipeline `[Slack:Maya Singh:06:25:00]`.
 
 ---
 
@@ -21,17 +21,17 @@ On March 15, 2025, `user-service` experienced database connection pool exhaustio
 
 | Risk Dimension | Risk Level | Finding | Evidence |
 |:---|:---:|:---|:---|
-| **Deploy Safety** | [![High](https://img.shields.io/badge/HIGH-f97316?style=flat-square)](#) | Pool size reduction merged without CI config limit validation | `[Git:a1b2c3d4]` |
-| **Circuit Breaking** | [![Critical](https://img.shields.io/badge/CRITICAL-ef4444?style=flat-square)](#) | Upstream gateway lacked fail-open caching during pool timeouts | `[Log:14:05:00]` |
-| **Observability** | [![Low](https://img.shields.io/badge/LOW-22c55e?style=flat-square)](#) | PagerDuty latency monitors triggered within 3 minutes | `[Alert:P1-Latency]` |
+| **Deploy Safety** | [![High](https://img.shields.io/badge/HIGH-f97316?style=flat-square)](#) | Absence of CI validation checks for forward-referencing function dependencies across SQL files. | `[Git: Commit mig001]` |
+| **Circuit Breaking** | [![Critical](https://img.shields.io/badge/CRITICAL-ef4444?style=flat-square)](#) | Migration runner lacked schema-health liveness probes to halt downstream scheduled workloads upon rollback. | `[Log:2025-09-15T03:01:05Z]` |
+| **Observability** | [![Medium](https://img.shields.io/badge/MEDIUM-eab308?style=flat-square)](#) | Downstream services lacked defensive input aggregation logic, causing cascading failures on NULL data. | `[Log:2025-09-15T06:30:00Z]` |
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:activity.svg?color=%2306b6d4" width="18"/> Impact
 
-- **Affected Services:** `user-service`, `api-gateway`, `checkout-api`
-- **User Impact:** ~68,400 user requests failed with HTTP 500 / 504 timeouts `[Log:14:05:33]`
-- **Duration:** 23 minutes total (14:02 UTC to 14:25 UTC)
+**Affected Services:** `migration-runner`, `database`, `data-pipeline`, `reporting-service`, `analytics dashboards`
+**User Impact:** Downstream analytics dashboards showed blank data, daily reports failed to generate, and automated data pipelines were halted for 305 minutes `[Log:2025-09-15T06:01:00Z]`.
+**Duration:** 305 minutes, from trigger time (2025-09-14T15:00:00Z) to full recovery (2025-09-15T08:10:00Z).
 
 ---
 
@@ -39,71 +39,106 @@ On March 15, 2025, `user-service` experienced database connection pool exhaustio
 
 | Time (UTC) | Source | Event |
 |:---|:---|:---|
-| 14:02 | `[Git:a1b2c3d4]` | Deployment v2.14.0 completed to production `[Git:a1b2c3d4]` |
-| 14:05 | `[Log:user-service]` | Database connection pool exhaustion errors detected `[Log:14:05:00]` |
-| 14:08 | `[Alert:P1-Latency]` | PagerDuty P1 Latency alarm fired for `user-service` `[Alert:P1-Latency]` |
-| 14:10 | `[Slack:#incidents]` | Incident declared by @sarah; war room triage initiated `[Slack:14:10:00]` |
-| 14:18 | `[Slack:#incidents]` | Root cause identified in commit `a1b2c3d4` by @dave `[Slack:14:18:00]` |
-| 14:20 | `[Git:e5f6a7b8]` | Hotfix commit deployed restoring pool size to 50 `[Git:e5f6a7b8]` |
-| 14:25 | `[Log:api-gateway]` | Error rates return to baseline 0.01%; incident resolved `[Log:14:25:00]` |
+| 2025-09-14 15:00 | `Git` | Migration commits merged containing incorrect numbering sequence where migration 043 references a function in migration 044 `[Git:Commit mig001]` |
+| 2025-09-15 03:01 | `Log` | migration-runner failed migration_043 because it referenced a non-existent function in migration_044 `[Log:2025-09-15T03:01:00Z]` |
+| 2025-09-15 03:01 | `Log` | migration_043 rolled back, leaving migration_042 committed with an empty status column `[Log:2025-09-15T03:01:05Z]` |
+| 2025-09-15 06:00 | `Log` | data-pipeline ETL job failed with a NOT NULL constraint violation on analytics table `[Log:2025-09-15T06:00:00Z]` |
+| 2025-09-15 06:00 | `Alert` | PagerDuty fired critical alert for ETL Pipeline Failure due to NULL constraint violations `[Alert:ETL Pipeline Failed]` |
+| 2025-09-15 06:15 | `Slack` | Maya Singh discovered migration_043 function dependency mismatch `[Slack:Maya Singh:06:15:00]` |
+| 2025-09-15 06:25 | `Slack` | Maya Singh initiated manual remediation to execute migration 044 first and re-run pipeline `[Slack:Maya Singh:06:25:00]` |
+| 2025-09-15 06:30 | `Log` | reporting-service failed to generate daily reports due to division by zero `[Log:2025-09-15T06:30:00Z]` |
+| 2025-09-15 08:10 | `Slack` | Maya Singh confirmed all migrations, pipelines, and dashboards were fully restored `[Slack:Maya Singh:08:10:00]` |
+
+<details>
+<summary><b>Raw Correlated Event Log</b> (click to expand)</summary>
+
+* `2025-09-14T15:00:00Z` [Git] Commit mig001: files migrations/042_add_status_column.sql, migrations/043_backfill_status.sql, migrations/044_compute_status_function.sql
+* `2025-09-15T03:01:00Z` [Log] migration_043 failed: cannot backfill — references migration_044 function that doesn't exist yet
+* `2025-09-15T03:01:05Z` [Log] migration_043 rolled back, leaving migration_042 committed with an empty status column
+* `2025-09-15T06:00:00Z` [Log] data-pipeline ETL job failed with a NOT NULL constraint violation on 'status' column in analytics table
+* `2025-09-15T06:00:30Z` [Alert] PagerDuty alert: ETL Pipeline Failed
+* `2025-09-15T06:01:00Z` [Log] Pipeline writing NULL status values. Downstream analytics dashboards showing blank data.
+* `2025-09-15T06:05:00Z` [Slack] AlertBot reported a data-pipeline ETL job failure with NULL constraint violations
+* `2025-09-15T06:10:00Z` [Slack] Maya Singh noted that the 'status' column from last night's migration was all NULLs and the backfill failed
+* `2025-09-15T06:15:00Z` [Slack] Maya Singh discovered that migration_043 depended on a function in migration_044
+* `2025-09-15T06:20:00Z` [Slack] Jake Brown acknowledged that the migration was split into 3 parts and incorrectly numbered
+* `2025-09-15T06:25:00Z` [Slack] Maya Singh proposed and initiated the fix to manually execute migration 044 first
+* `2025-09-15T06:30:00Z` [Log] Daily report generation failed: division by zero — status counts are all NULL
+* `2025-09-15T06:30:30Z` [Alert] Datadog alert: Daily Reports Failed
+* `2025-09-15T08:10:00Z` [Slack] Maya Singh confirmed migrations, pipeline, analytics data, and dashboards were fully fixed
+
+</details>
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:search.svg?color=%23e11d48" width="18"/> Root Cause Analysis
 
-**Root Cause:** Deploy v2.14.0 reduced max connection pool capacity from 50 to 20 without setting acquire timeouts, leading to thread starvation under normal peak traffic `[Log:14:05:00]`.
+**Root Cause:** An out-of-order database migration sequence numbering defect caused migration 043 to reference a function defined in migration 044, resulting in a partial migration rollback that left unpopulated column data and triggered downstream ETL failures `[Log:2025-09-15T03:01:05Z]`.
 
 **Causal Chain:**
-1. Commit `a1b2c3d4` merged with reduced connection pool settings -> `[Git:a1b2c3d4]`
-2. Traffic spike exhausted active database connection pool -> `[Log:14:05:00]`
-3. Thread starvation caused cascading HTTP 504 timeouts at API gateway -> `[Alert:P1-Latency]`
+1. Migration commits merged containing incorrect numbering sequence where migration 043 references a function in migration 044 `[Git:2025-09-14T15:00:00Z]` -> `[Git:Commit mig001]`
+2. migration-runner fails migration 043 and executes rollback, leaving migration 042 committed with an empty status column `[Log:2025-09-15T03:01:05Z]` -> `[Log:2025-09-15T03:01:05Z]`
+3. data-pipeline ETL job fails due to NOT NULL constraint violations on the unpopulated status column `[Log:2025-09-15T06:00:00Z]` -> `[Log:2025-09-15T06:00:00Z]`
+4. reporting-service fails to generate daily reports due to division by zero errors `[Log:2025-09-15T06:30:00Z]` -> `[Log:2025-09-15T06:30:00Z]`
+
+**Confidence:** High — supported by explicit git commit logs, unambiguous migration runner errors, and direct team investigation notes `[Git:Commit mig001], [Log:2025-09-15T03:01:00Z], [Slack:Maya Singh:06:15:00]`.
+
+---
 
 ### <img src="https://api.iconify.design/lucide:file-code-2.svg?color=%238b5cf6" width="18"/> Forensic Code Analysis (Root Cause Diff)
 
-> **Commit:** [`a1b2c3d4`] — *Update database pool configuration*  
-> **Author:** `@sarah-c` | **Primary File:** `src/db/config.py`
+> **Commit:** [`mig001`] — *Add status column, backfill, and compute status function*  
+> **Author:** `Development Team` | **Primary File:** `migrations/043_backfill_status.sql`
 
 ```diff
-- pool_size = 50  # [Git:a1b2c3d4]
-- pool_timeout = 30
-+ pool_size = 20  # 🚨 [CAUSE: Max connections reduced without timeout guard]
-+ pool_timeout = None  # 🚨 [CAUSE: Missing acquire timeout causing thread starvation]
+--- a/migrations/043_backfill_status.sql
++++ b/migrations/043_backfill_status.sql
+@@ -1,3 +1,3 @@
+ UPDATE orders
+-SET status = compute_status(id);
++SET status = compute_status(id); # 🚨 CAUSE: function compute_status() does not exist yet (defined in migration 044)
 ```
 
 #### Code Vulnerability Breakdown:
-* **Line 4 (Critical):** Pool size reduced to 20 without increasing worker count.
-* **Line 5 (Secondary):** `pool_timeout` set to `None` causes requests to block indefinitely.
+* **Line 2 (Critical):** Calls function `compute_status()` before it is defined in sequence, causing the migration execution to fail and trigger an incomplete schema rollback `[Log:2025-09-15T03:01:00Z]`.
 
-#### Preventative Remediation Patch:
+#### Preventative Remediation Patch
 
 ```diff
-+ pool_size = 50  # [FIX: Restore safe pool size]
-+ pool_timeout = 30  # [FIX: Set 30s acquire timeout guard]
+--- a/migrations/043_backfill_status.sql
++++ b/migrations/043_backfill_status.sql
+@@ -1,3 +1,3 @@
+ UPDATE orders
+--- FIX: Ensure function definition precedes usage, or combine migration files
+-SET status = compute_status(id);
++SET status = compute_status(id);
 ```
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:layers.svg?color=%230ea5e9" width="18"/> Contributing Factors
 
-- **Missing Configuration Linting:** CI pipeline did not validate minimum connection pool sizing `[Git:a1b2c3d4]`.
-- **Aggressive Pool Shrinking:** Resource conservation optimization was applied without synthetic load soak testing.
-- **Unbounded Wait Queues:** Upstream connection pool requests blocked indefinitely without timeout fail-fast `[Log:14:05:00]`.
+- **Lack of CI Validation Checks:** Absence of automated checks for forward-referencing function dependencies across SQL migration files `[Git:2025-09-14T15:00:00Z]`.
+- **Missing Deployment Safeguards:** Absence of migration runner health-gates to halt dependent scheduled workloads upon partial rollbacks `[Log:2025-09-15T03:01:05Z], [Log:2025-09-15T06:00:00Z]`.
+- **Defensive Coding Gaps:** Downstream reporting and analytics services assumed non-null status values and safe aggregation denominators `[Log:2025-09-15T06:30:00Z]`.
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:shield-check.svg?color=%2310b981" width="18"/> Prevention Analysis
 
+> *How could this incident have been prevented or detected earlier?*
+
 | Prevention Point | Safeguard | Expected Outcome |
 |:---|:---|:---|
-| **At PR / CI Stage** | Automated config linter for database pool parameters | Prevent misconfigured pool limits from merging |
-| **At Deploy Stage** | Canary deployment with synthetic load soak test | Detect connection exhaustion before 100% rollout |
-| **At Runtime Stage** | Circuit breaker with fast-fail fallback | Prevent API gateway thread starvation |
+| At PR / CI Stage | Automated SQL migration dependency validator checking sequence order. | Intercept numbering defect before merge `[Git:2025-09-14T15:00:00Z]` |
+| At Deploy Stage | Migration runner circuit breaker pausing dependent scheduled tasks on rollback. | Prevent ETL execution against unpopulated schema `[Log:2025-09-15T03:01:05Z]` |
+| At Runtime Stage | Defensive null-handling and safe division wrappers in reporting services. | Prevent cascading division-by-zero errors `[Log:2025-09-15T06:30:00Z]` |
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:wrench.svg?color=%2364748b" width="18"/> Resolution
 
-The incident was mitigated by deploying hotfix commit `e5f6a7b8` which restored `pool_size = 50` and enforced `pool_timeout = 30`. Database connection metrics immediately normalized.
+Data engineer Maya Singh identified the dependency mismatch in Slack `[Slack:Maya Singh:06:15:00]`, manually executed migration 044 to provide the missing function, successfully re-ran migration 043, and triggered the data pipeline recovery `[Slack:Maya Singh:06:25:00]`. Full system health, dashboards, and reporting services were verified and restored by 08:10 UTC `[Slack:Maya Singh:08:10:00]`.
 
 ---
 
@@ -111,22 +146,22 @@ The incident was mitigated by deploying hotfix commit `e5f6a7b8` which restored 
 
 | Priority | Type | Action | Owner | Est. |
 |:---|:---|:---|:---|:---|
-| **P0** | Prevent | Implement CI lint rule preventing database `pool_size < 30` or `pool_timeout is None` | @sre-team | 2d |
-| **P1** | Detect | Add Prometheus alert rule for connection pool utilization > 80% | @observability | 1d |
-| **P2** | Mitigate | Enable circuit breaker pattern with cached fallbacks in `api-gateway` | @platform | 3d |
+| **P0** | Prevent | Implement CI migration linter to validate sequence order and function dependencies. | Database Team | 3 days |
+| **P1** | Detect | Add migration runner circuit breaker to pause dependent ETL jobs on rollback. | Data Engineering | 5 days |
+| **P2** | Mitigate | Add defensive null-handling and safe division wrappers to reporting service. | Analytics Team | 4 days |
 
 ---
 
 ## <img src="https://api.iconify.design/lucide:book-open.svg?color=%236366f1" width="18"/> Lessons Learned
 
-- Database connection limits must be guarded by automated CI validation rather than manual code review.
-- Systemic fail-fast timeouts prevent single-service thread exhaustion from taking down edge gateways.
+- Complex database migrations split across multiple files must be validated for inter-file function dependencies before merge `[Git:Commit mig001]`.
+- Downstream scheduled tasks must not operate on unverified schema assumptions following partial deployment rollbacks `[Log:2025-09-15T03:01:05Z]`.
 
 ## What Went Well
 
-- Automated PagerDuty alarms fired within 3 minutes of the initial error spike.
-- Rollback hotfix was verified, built, and deployed in under 7 minutes once identified.
+- Automated PagerDuty and Datadog alerts successfully notified the team of ETL and reporting failures `[Alert:ETL Pipeline Failed], [Alert:Daily Reports Failed]`.
+- Cross-functional investigation in Slack rapidly pinpointed the root cause within 15 minutes of detection `[Slack:Maya Singh:06:15:00]`.
 
 ## What Could Be Improved
 
-- Pre-deployment staging environments should run automated stress tests matching production traffic volume.
+- Pre-deployment CI checks lacked SQL semantic and function

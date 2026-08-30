@@ -4,12 +4,155 @@
     "incident_name": "incident_01_db_connection_pool",
     "agent": {
       "root_cause_accuracy": {
-        "accuracy": "partial",
-        "score": 0.5,
-        "explanation": "The report correctly identifies that deploy v2.14.0 introduced missing connection timeouts leading to pool exhaustion. However, it incorrectly attributes the trigger to a reduction in pool capacity (50 to 20) and a traffic spike, rather than a config schema migration removing timeouts that caused slow queries to hold connections indefinitely."
+        "accuracy": "exact",
+        "score": 1.0,
+        "explanation": "The report accurately identifies the removal of database connection timeouts during a configuration migration/refactor and notes how it caused connections from slow queries to be held, leading to pool exhaustion."
       },
       "timeline_recall": {
-        "raw": "{\n  \"events_found\": [\n    {\n      \"ground_truth\": \"Deploy v2.14.0 completed \\u2014 config"
+        "events_found": [
+          {
+            "ground_truth": "Deploy v2.14.0 completed \u2014 config migration removed timeout settings",
+            "found": true,
+            "report_mention": "13:45 | Git | Commit m0n1o2p deployed, bumping version to v2.14.0 [Deploy:v2.14.0]"
+          },
+          {
+            "ground_truth": "Connection pool usage begins climbing (75%)",
+            "found": true,
+            "report_mention": "14:15 | Logs | user-service warns that connection pool usage has reached 75% [Log:2025-03-15T14:15:33Z]"
+          },
+          {
+            "ground_truth": "First alert: pool at 90%",
+            "found": true,
+            "report_mention": "14:28 | Alerts | Datadog fires alert for DB Connection Pool > 90% [Alert:Datadog alert]"
+          },
+          {
+            "ground_truth": "Pool exhausted \u2014 first user-facing 503 errors",
+            "found": true,
+            "report_mention": "14:30 | Logs | api-gateway returns HTTP 503 to clients for /api/users [Log:2025-03-15T14:30:14Z]"
+          },
+          {
+            "ground_truth": "Root cause identified \u2014 missing timeout config",
+            "found": true,
+            "report_mention": "14:33 | Slack | Sarah Chen discovers missing connection timeout setting in config [Slack:Sarah Chen:14:33:00Z]"
+          },
+          {
+            "ground_truth": "Hotfix deployed \u2014 timeouts restored",
+            "found": true,
+            "report_mention": "14:38 | Slack | Sarah Chen deploys configuration hotfix with connection timeouts [Slack:Sarah Chen:14:38:00Z]"
+          },
+          {
+            "ground_truth": "Full recovery confirmed",
+            "found": true,
+            "report_mention": "14:42 | Slack | Sarah Chen confirms error rates returned to 0% after 18 min impact [Slack:Sarah Chen:14:42:00Z]"
+          }
+        ],
+        "recall": 1.0,
+        "found_count": 7,
+        "total_count": 7
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "The new config schema did not include connection pool timeout settings that existed in the legacy config block",
+            "found": true,
+            "report_mention": "database configuration refactor inadvertently removed connection pool size and timeout limits"
+          },
+          {
+            "ground_truth": "No config validation in CI to catch missing required database settings",
+            "found": true,
+            "report_mention": "Absence of CI Configuration Linting: Absence of automated configuration validation in the CI/CD pipeline allowed missing limits to reach production"
+          },
+          {
+            "ground_truth": "The new user preferences JOIN query was slower than the original, accelerating pool exhaustion",
+            "found": true,
+            "report_mention": "complex user lookup JOIN query to cause connection accumulation and total pool exhaustion"
+          },
+          {
+            "ground_truth": "No connection pool monitoring alert at lower thresholds (e.g. 50%) to provide earlier warning",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.75,
+        "found_count": 3,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 100,
+        "violations": []
+      },
+      "completeness_score": {
+        "score": 87,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items"
+        ],
+        "missing": [
+          "Lessons Learned"
+        ]
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 53,
+        "word_count": 1283,
+        "has_risk_matrix": true,
+        "has_prevention_analysis": true,
+        "has_forensic_diff": true,
+        "root_cause_keyword_overlap": 0.61
+      },
+      "weighted_score": 95.0
+    },
+    "baseline": {
+      "root_cause_accuracy": {
+        "accuracy": "wrong",
+        "score": 0.0,
+        "explanation": "The report attributes the issue to failing to verify connection limits under load, whereas the ground truth is that database connection pool timeout settings were accidentally removed during a config schema migration, causing connection leaks."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "Deploy v2.14.0 completed \u2014 config migration removed timeout settings",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Connection pool usage begins climbing (75%)",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "First alert: pool at 90%",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Pool exhausted \u2014 first user-facing 503 errors",
+            "found": true,
+            "report_mention": "Errors started appearing"
+          },
+          {
+            "ground_truth": "Root cause identified \u2014 missing timeout config",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Hotfix deployed \u2014 timeouts restored",
+            "found": true,
+            "report_mention": "Fix applied and service restored"
+          },
+          {
+            "ground_truth": "Full recovery confirmed",
+            "found": true,
+            "report_mention": "Fix applied and service restored"
+          }
+        ],
+        "recall": 0.42857142857142855,
+        "found_count": 3,
+        "total_count": 7
       },
       "contributing_factors_recall": {
         "factors_found": [
@@ -20,8 +163,8 @@
           },
           {
             "ground_truth": "No config validation in CI to catch missing required database settings",
-            "found": true,
-            "report_mention": "- **Missing Configuration Linting:** CI pipeline did not validate minimum connection pool sizing `[Git:a1b2c3d4]`."
+            "found": false,
+            "report_mention": null
           },
           {
             "ground_truth": "The new user preferences JOIN query was slower than the original, accelerating pool exhaustion",
@@ -30,53 +173,13 @@
           },
           {
             "ground_truth": "No connection pool monitoring alert at lower thresholds (e.g. 50%) to provide earlier warning",
-            "found": false,
-            "report_mention": null
+            "found": true,
+            "report_mention": "Insufficient monitoring alerts"
           }
         ],
         "recall": 0.25,
         "found_count": 1,
         "total_count": 4
-      },
-      "blameless_score": {
-        "score": 100,
-        "violations": []
-      },
-      "completeness_score": {
-        "score": 100,
-        "present": [
-          "Executive Summary",
-          "Impact",
-          "Timeline",
-          "Root Cause",
-          "Contributing Factors",
-          "Resolution",
-          "Action Items",
-          "Lessons Learned"
-        ],
-        "missing": []
-      },
-      "deterministic_metrics": {
-        "evidence_citation_count": 24,
-        "word_count": 833,
-        "has_risk_matrix": true,
-        "has_prevention_analysis": true,
-        "has_forensic_diff": true,
-        "root_cause_keyword_overlap": 0.57
-      },
-      "weighted_score": 53.8
-    },
-    "baseline": {
-      "root_cause_accuracy": {
-        "accuracy": "partial",
-        "score": 0.5,
-        "explanation": "The report correctly identifies a database connection issue following a deployment, but it provides a surface-level explanation (blaming a failure to test connection limits under load) rather than identifying the actual technical root cause (the accidental removal of connection pool timeout settings during a config schema migration)."
-      },
-      "timeline_recall": {
-        "raw": "{\n  \"events_found\": [\n    {\n      \"ground_truth\": \"Deploy v2.14.0 completed \u2014 config migration removed timeout settings\",\n      "
-      },
-      "contributing_factors_recall": {
-        "raw": "{\n  \"factors_found\": [\n    {\n      \"ground_truth\": \"The new config schema did not include connection pool timeout settings that existed in the legacy"
       },
       "blameless_score": {
         "score": 85,
@@ -112,7 +215,7 @@
         "has_forensic_diff": false,
         "root_cause_keyword_overlap": 0.22
       },
-      "weighted_score": 47.2
+      "weighted_score": 44.5
     }
   },
   {
@@ -120,63 +223,63 @@
     "incident_name": "incident_02_memory_leak",
     "agent": {
       "root_cause_accuracy": {
-        "accuracy": "wrong",
-        "score": 0.0,
-        "explanation": "The report attributes the root cause to a database connection pool reduction causing thread starvation, whereas the ground truth root cause was an unbounded cache memory leak caused by enabling the 'enable_extended_cache' feature flag without eviction policies."
+        "accuracy": "exact",
+        "score": 1.0,
+        "explanation": "The report precisely identifies the root cause as the enablement of the 'extended_cache' feature flag introducing an unbounded in-memory cache lacking TTL or eviction policies, directly matching the ground truth."
       },
       "timeline_recall": {
         "events_found": [
           {
             "ground_truth": "Feature flag enabled in production",
-            "found": false,
-            "report_mention": null
+            "found": true,
+            "report_mention": "Commit l0m1n2o enabled the extended cache feature flag in production"
           },
           {
             "ground_truth": "Memory at 60% and climbing steadily",
-            "found": false,
-            "report_mention": null
+            "found": true,
+            "report_mention": "product-service logged initial memory warning at 1200MB out of 2048MB [Log: 2025-04-02T14:00:00Z]"
           },
           {
             "ground_truth": "Memory alert triggered at 80%",
-            "found": false,
-            "report_mention": null
+            "found": true,
+            "report_mention": "Datadog triggered warning alert for memory usage exceeding 80%"
           },
           {
             "ground_truth": "First OOMKill",
-            "found": false,
-            "report_mention": null
+            "found": true,
+            "report_mention": "Kubernetes reported product-service pod terminated due to OOMKilled"
           },
           {
             "ground_truth": "Second OOMKill \u2014 pattern confirmed",
-            "found": false,
-            "report_mention": null
+            "found": true,
+            "report_mention": "Second fatal OutOfMemoryError and Kubernetes pod OOMKilled event occurred"
           },
           {
             "ground_truth": "Feature flag disabled",
-            "found": false,
-            "report_mention": null
+            "found": true,
+            "report_mention": "On-call engineer toggled the 'extended_cache' feature flag off"
           },
           {
             "ground_truth": "Memory stabilized \u2014 incident resolved",
-            "found": false,
-            "report_mention": null
+            "found": true,
+            "report_mention": "PagerDuty marked product-service as recovered after memory and latency normalized"
           }
         ],
-        "recall": 0.0,
-        "found_count": 0,
+        "recall": 1.0,
+        "found_count": 7,
         "total_count": 7
       },
       "contributing_factors_recall": {
         "factors_found": [
           {
             "ground_truth": "Extended cache was a prototype without TTL or eviction \u2014 marked as TODO but shipped anyway",
-            "found": false,
-            "report_mention": null
+            "found": true,
+            "report_mention": "The cache implementation lacked TTL, maximum size constraints, or Least-Recently-Used (LRU) eviction policies"
           },
           {
             "ground_truth": "Feature flag was enabled in production after only 1 day in staging, which had fewer tenants and didn't surface the memory issue",
-            "found": false,
-            "report_mention": null
+            "found": true,
+            "report_mention": "Absence of pre-production load testing or canary validation for memory scaling characteristics"
           },
           {
             "ground_truth": "No memory growth rate alerting \u2014 only triggered at 80% threshold, too late for gradual leaks",
@@ -189,8 +292,8 @@
             "report_mention": null
           }
         ],
-        "recall": 0.0,
-        "found_count": 0,
+        "recall": 0.5,
+        "found_count": 2,
         "total_count": 4
       },
       "blameless_score": {
@@ -212,20 +315,20 @@
         "missing": []
       },
       "deterministic_metrics": {
-        "evidence_citation_count": 24,
-        "word_count": 833,
+        "evidence_citation_count": 26,
+        "word_count": 1426,
         "has_risk_matrix": true,
         "has_prevention_analysis": true,
         "has_forensic_diff": true,
-        "root_cause_keyword_overlap": 0.29
+        "root_cause_keyword_overlap": 0.81
       },
-      "weighted_score": 35.0
+      "weighted_score": 92.5
     },
     "baseline": {
       "root_cause_accuracy": {
         "accuracy": "wrong",
         "score": 0.0,
-        "explanation": "The report incorrectly attributes the issue to database connection limits under load, whereas the actual root cause was unbounded cache growth leading to heap memory exhaustion due to an unconfigured feature flag."
+        "explanation": "The report blames a database issue and connection limits, which is completely unrelated to the actual root cause of an unbounded in-memory cache growing due to a feature flag lacking eviction policies."
       },
       "timeline_recall": {
         "events_found": [
@@ -261,12 +364,12 @@
           },
           {
             "ground_truth": "Memory stabilized \u2014 incident resolved",
-            "found": false,
-            "report_mention": null
+            "found": true,
+            "report_mention": "14:25: Fix applied and service restored"
           }
         ],
-        "recall": 0.0,
-        "found_count": 0,
+        "recall": 0.14,
+        "found_count": 1,
         "total_count": 7
       },
       "contributing_factors_recall": {
@@ -283,8 +386,8 @@
           },
           {
             "ground_truth": "No memory growth rate alerting \u2014 only triggered at 80% threshold, too late for gradual leaks",
-            "found": false,
-            "report_mention": null
+            "found": true,
+            "report_mention": "Insufficient monitoring alerts"
           },
           {
             "ground_truth": "Kubernetes restart masked the problem temporarily, delaying diagnosis",
@@ -292,8 +395,8 @@
             "report_mention": null
           }
         ],
-        "recall": 0.0,
-        "found_count": 0,
+        "recall": 0.25,
+        "found_count": 1,
         "total_count": 4
       },
       "blameless_score": {
@@ -330,43 +433,1860 @@
         "has_forensic_diff": false,
         "root_cause_keyword_overlap": 0.05
       },
-      "weighted_score": 32.2
+      "weighted_score": 38.8
     }
   },
   {
     "incident_id": 3,
-    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 7.298577786s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.6-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '7s'}]}}]"
+    "incident_name": "incident_03_cascading_failure",
+    "agent": {
+      "root_cause_accuracy": {
+        "accuracy": "exact",
+        "score": 1.0,
+        "explanation": "The report accurately identifies the exact root cause described in the ground truth: a breaking configuration change in the circuit breaker library upgrade from v1.8 to v2.0 that failed to properly register fallback handlers/block requests during the OPEN state, leading to thread pool exhaustion and cascading failures."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "Deploy v3.2.0 with upgraded circuit breaker library",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "inventory-service starts experiencing DB slowness",
+            "found": true,
+            "report_mention": "inventory-service reported intermittent database slowness with average query times of 850ms"
+          },
+          {
+            "ground_truth": "Circuit breaker opens but fails to block requests \u2014 thread pool exhaustion",
+            "found": true,
+            "report_mention": "payment-service circuit breaker tripped to OPEN state, but requests continued passing through; payment-service thread pool fully exhausted"
+          },
+          {
+            "ground_truth": "Cascade: checkout-service and notification-service go down",
+            "found": true,
+            "report_mention": "checkout-service failed due to widespread payment-service 503 errors"
+          },
+          {
+            "ground_truth": "Root cause identified \u2014 broken circuit breaker config",
+            "found": true,
+            "report_mention": "Engineering investigation confirmed v2.0 config format shift prevented OPEN state handler registration"
+          },
+          {
+            "ground_truth": "Rollback complete \u2014 services recovering",
+            "found": true,
+            "report_mention": "Rollback completed; payment and checkout services recovered"
+          },
+          {
+            "ground_truth": "Full recovery",
+            "found": true,
+            "report_mention": "All services verified healthy and incident declared resolved"
+          }
+        ],
+        "recall": 0.857,
+        "found_count": 6,
+        "total_count": 7
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Circuit breaker v2.0 had a breaking change in how OPEN state handlers are registered \u2014 poorly documented by the library",
+            "found": true,
+            "report_mention": "An upgrade to the circuit-breaker library to v2.0 introduced a breaking configuration format change that prevented fallback execution handlers from registering during OPEN states"
+          },
+          {
+            "ground_truth": "Unit tests verified the CLOSED\u2192OPEN transition but not that requests were actually blocked in OPEN state",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No integration test that simulated upstream failure and verified circuit breaker behavior end-to-end",
+            "found": true,
+            "report_mention": "Lack of canary deployments and integration tests for core middleware upgrades allowed breaking changes to reach production undetected"
+          },
+          {
+            "ground_truth": "inventory-service had transient DB slowness that triggered the cascade \u2014 the original issue was minor but amplified by the broken circuit breaker",
+            "found": true,
+            "report_mention": "When inventory-service experienced transient database slowness, payment-service failed to block outgoing calls, leading to full thread pool exhaustion"
+          },
+          {
+            "ground_truth": "Thread pool had no timeout on pending requests, allowing unbounded accumulation",
+            "found": true,
+            "report_mention": "Absence of strict bulkhead isolation and aggressive request timeouts within payment-service, allowing a single slow dependency to monopolize all execution threads"
+          }
+        ],
+        "recall": 0.8,
+        "found_count": 4,
+        "total_count": 5
+      },
+      "blameless_score": {
+        "score": 100,
+        "violations": []
+      },
+      "completeness_score": {
+        "score": 100,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items",
+          "Lessons Learned"
+        ],
+        "missing": []
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 9,
+        "word_count": 1459,
+        "has_risk_matrix": true,
+        "has_prevention_analysis": true,
+        "has_forensic_diff": true,
+        "root_cause_keyword_overlap": 0.74
+      },
+      "weighted_score": 94.1
+    },
+    "baseline": {
+      "root_cause_accuracy": {
+        "accuracy": "wrong",
+        "score": 0.0,
+        "explanation": "The report incorrectly attributes the root cause to a database connection limit issue, whereas the ground truth clearly states it was caused by a breaking configuration change in an upgraded circuit breaker library (v2.0) that failed to register the fallback handler."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "Deploy v3.2.0 with upgraded circuit breaker library",
+            "found": true,
+            "report_mention": "Deployment started"
+          },
+          {
+            "ground_truth": "inventory-service starts experiencing DB slowness",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Circuit breaker opens but fails to block requests \u2014 thread pool exhaustion",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Cascade: checkout-service and notification-service go down",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Root cause identified \u2014 broken circuit breaker config",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Rollback complete \u2014 services recovering",
+            "found": true,
+            "report_mention": "Fix applied and service restored"
+          },
+          {
+            "ground_truth": "Full recovery",
+            "found": true,
+            "report_mention": "service restored"
+          }
+        ],
+        "recall": 0.43,
+        "found_count": 3,
+        "total_count": 7
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Circuit breaker v2.0 had a breaking change in how OPEN state handlers are registered \u2014 poorly documented by the library",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Unit tests verified the CLOSED\u2192OPEN transition but not that requests were actually blocked in OPEN state",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No integration test that simulated upstream failure and verified circuit breaker behavior end-to-end",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "inventory-service had transient DB slowness that triggered the cascade \u2014 the original issue was minor but amplified by the broken circuit breaker",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Thread pool had no timeout on pending requests, allowing unbounded accumulation",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 5
+      },
+      "blameless_score": {
+        "score": 85,
+        "violations": [
+          {
+            "line": 16,
+            "pattern": "the developer forgot",
+            "context": "The service had a database issue after the deployment. The developer forgot to verify connection limits under load.",
+            "suggestion": "Consider replacing with: \"was not part of the checklist\""
+          }
+        ]
+      },
+      "completeness_score": {
+        "score": 87,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items"
+        ],
+        "missing": [
+          "Lessons Learned"
+        ]
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 0,
+        "word_count": 116,
+        "has_risk_matrix": false,
+        "has_prevention_analysis": false,
+        "has_forensic_diff": false,
+        "root_cause_keyword_overlap": 0.12
+      },
+      "weighted_score": 40.8
+    }
   },
   {
     "incident_id": 4,
-    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 58.129675136s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.6-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '58s'}]}}]"
+    "incident_name": "incident_04_ssl_cert_expiry",
+    "agent": {
+      "root_cause_accuracy": {
+        "accuracy": "exact",
+        "score": 1.0,
+        "explanation": "The report accurately identifies the exact root cause: the SSL certificate renewal cron job was left on a legacy server that was decommissioned during a cloud migration and was not migrated to the new infrastructure."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "SSL certificate expired",
+            "found": true,
+            "report_mention": "Nginx reported that the SSL certificate for api.example.com has expired."
+          },
+          {
+            "ground_truth": "All HTTPS traffic begins failing",
+            "found": true,
+            "report_mention": "The api-gateway registered an upstream SSL error causing HTTPS traffic to fail."
+          },
+          {
+            "ground_truth": "Root cause identified \u2014 renewal cron on decommissioned server",
+            "found": true,
+            "report_mention": "Carlos Ruiz discovered the renewal cron was left on a decommissioned legacy server."
+          },
+          {
+            "ground_truth": "New certificate installed",
+            "found": true,
+            "report_mention": "Carlos Ruiz reported the new certificate was generated and deployed."
+          },
+          {
+            "ground_truth": "Traffic restored",
+            "found": true,
+            "report_mention": "UptimeRobot reported api.example.com is UP and responding normally."
+          }
+        ],
+        "recall": 1.0,
+        "found_count": 5,
+        "total_count": 5
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "No audit of cron jobs on legacy servers before decommission",
+            "found": true,
+            "report_mention": "Lack of infrastructure-as-code tracking for recurring local cron jobs during cloud migration."
+          },
+          {
+            "ground_truth": "No certificate expiry monitoring/alerting (only caught when it actually expired)",
+            "found": true,
+            "report_mention": "Absence of proactive pre-expiry alerts for the TLS certificate before expiration."
+          },
+          {
+            "ground_truth": "Cloud migration checklist did not include certificate management tasks",
+            "found": true,
+            "report_mention": "Absence of deployment verification checklists addressing background service dependencies post-migration."
+          }
+        ],
+        "recall": 1.0,
+        "found_count": 3,
+        "total_count": 3
+      },
+      "blameless_score": {
+        "score": 100,
+        "violations": []
+      },
+      "completeness_score": {
+        "score": 100,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items",
+          "Lessons Learned"
+        ],
+        "missing": []
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 33,
+        "word_count": 1171,
+        "has_risk_matrix": true,
+        "has_prevention_analysis": true,
+        "has_forensic_diff": true,
+        "root_cause_keyword_overlap": 0.94
+      },
+      "weighted_score": 100.0
+    },
+    "baseline": {
+      "root_cause_accuracy": {
+        "accuracy": "wrong",
+        "score": 0.0,
+        "explanation": "The report claims a database connection limit issue due to a deployment, whereas the actual root cause is an expired SSL certificate because an auto-renewal cron job was not migrated during cloud infrastructure decommissioning."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "SSL certificate expired",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "All HTTPS traffic begins failing",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Root cause identified \u2014 renewal cron on decommissioned server",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "New certificate installed",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Traffic restored",
+            "found": true,
+            "report_mention": "Fix applied and service restored"
+          }
+        ],
+        "recall": 0.2,
+        "found_count": 1,
+        "total_count": 5
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "No audit of cron jobs on legacy servers before decommission",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No certificate expiry monitoring/alerting (only caught when it actually expired)",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Cloud migration checklist did not include certificate management tasks",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 3
+      },
+      "blameless_score": {
+        "score": 85,
+        "violations": [
+          {
+            "line": 16,
+            "pattern": "the developer forgot",
+            "context": "The service had a database issue after the deployment. The developer forgot to verify connection limits under load.",
+            "suggestion": "Consider replacing with: \"was not part of the checklist\""
+          }
+        ]
+      },
+      "completeness_score": {
+        "score": 87,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items"
+        ],
+        "missing": [
+          "Lessons Learned"
+        ]
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 0,
+        "word_count": 116,
+        "has_risk_matrix": false,
+        "has_prevention_analysis": false,
+        "has_forensic_diff": false,
+        "root_cause_keyword_overlap": 0.06
+      },
+      "weighted_score": 36.2
+    }
   },
   {
     "incident_id": 5,
-    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 49.539924852s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.6-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '49s'}]}}]"
+    "incident_name": "incident_05_dns_failure",
+    "agent": {
+      "root_cause_accuracy": {
+        "accuracy": "exact",
+        "score": 1.0,
+        "explanation": "The report accurately identifies that the internal DNS zone (example.internal) was omitted from the migration configuration and Terraform setup during the transition to Cloudflare, leading to name resolution failures."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "DNS migration started",
+            "found": true,
+            "report_mention": "Automated Terraform apply executed for Cloudflare DNS configuration"
+          },
+          {
+            "ground_truth": "NS records propagate \u2014 internal DNS starts failing",
+            "found": true,
+            "report_mention": "API gateway experiences DNS resolution failure for internal-db.example.internal"
+          },
+          {
+            "ground_truth": "Root cause identified \u2014 internal zone not migrated",
+            "found": true,
+            "report_mention": "Scope narrowed to recent DNS migration changes"
+          },
+          {
+            "ground_truth": "Internal zone added to Cloudflare",
+            "found": true,
+            "report_mention": "Missing internal zone added to Cloudflare"
+          },
+          {
+            "ground_truth": "Full recovery",
+            "found": true,
+            "report_mention": "All services confirmed healthy after propagation"
+          }
+        ],
+        "recall": 1.0,
+        "found_count": 5,
+        "total_count": 5
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Migration plan and Terraform config only covered public-facing DNS zones",
+            "found": true,
+            "report_mention": "An incomplete DNS migration configuration omitted internal infrastructure zone definitions (`example.internal`) from the Cloudflare Terraform provider setup"
+          },
+          {
+            "ground_truth": "No pre-migration audit of all DNS zones, including private/internal zones",
+            "found": true,
+            "report_mention": "Lack of pre-deployment validation and integration testing for infrastructure-as-code changes to verify zone completeness before production apply"
+          },
+          {
+            "ground_truth": "Migration was started at 3 AM with limited oversight",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No DNS resolution health check that would have caught the issue before propagation completed",
+            "found": true,
+            "report_mention": "Staged DNS migration rollout with pre- and post-apply DNS resolution smoke tests."
+          }
+        ],
+        "recall": 0.75,
+        "found_count": 3,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 100,
+        "violations": []
+      },
+      "completeness_score": {
+        "score": 100,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items",
+          "Lessons Learned"
+        ],
+        "missing": []
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 24,
+        "word_count": 1085,
+        "has_risk_matrix": true,
+        "has_prevention_analysis": true,
+        "has_forensic_diff": true,
+        "root_cause_keyword_overlap": 0.65
+      },
+      "weighted_score": 96.2
+    },
+    "baseline": {
+      "root_cause_accuracy": {
+        "accuracy": "wrong",
+        "score": 0.0,
+        "explanation": "The report claims the root cause was a database connection limit issue, whereas the ground truth states it was a missing internal DNS zone during a DNS provider migration."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "DNS migration started",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "NS records propagate \u2014 internal DNS starts failing",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Root cause identified \u2014 internal zone not migrated",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Internal zone added to Cloudflare",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Full recovery",
+            "found": true,
+            "report_mention": "14:25: Fix applied and service restored"
+          }
+        ],
+        "recall": 0.2,
+        "found_count": 1,
+        "total_count": 5
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Migration plan and Terraform config only covered public-facing DNS zones",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No pre-migration audit of all DNS zones, including private/internal zones",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Migration was started at 3 AM with limited oversight",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No DNS resolution health check that would have caught the issue before propagation completed",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 85,
+        "violations": [
+          {
+            "line": 16,
+            "pattern": "the developer forgot",
+            "context": "The service had a database issue after the deployment. The developer forgot to verify connection limits under load.",
+            "suggestion": "Consider replacing with: \"was not part of the checklist\""
+          }
+        ]
+      },
+      "completeness_score": {
+        "score": 87,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items"
+        ],
+        "missing": [
+          "Lessons Learned"
+        ]
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 0,
+        "word_count": 116,
+        "has_risk_matrix": false,
+        "has_prevention_analysis": false,
+        "has_forensic_diff": false,
+        "root_cause_keyword_overlap": 0.17
+      },
+      "weighted_score": 36.2
+    }
   },
   {
     "incident_id": 6,
-    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 40.675649222s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-3.6-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '40s'}]}}]"
+    "incident_name": "incident_06_race_condition",
+    "agent": {
+      "root_cause_accuracy": {
+        "accuracy": "exact",
+        "score": 1.0,
+        "explanation": "The report accurately identifies the root cause as a non-atomic read-then-write (check-then-act / TOCTOU) race condition in the payment idempotency check that allowed duplicate payments under high concurrency, perfectly matching the ground truth."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "Flash sale started \u2014 traffic surges to 450 req/s",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "First duplicate charge detected",
+            "found": true,
+            "report_mention": "Payment-service experienced its first error, detecting a duplicate charge for order ORD-88421."
+          },
+          {
+            "ground_truth": "Race condition identified in idempotency check",
+            "found": true,
+            "report_mention": "Race condition logged, confirming concurrent requests passed idempotency checks for order ORD-88450."
+          },
+          {
+            "ground_truth": "Database UNIQUE constraint applied \u2014 duplicates stopped",
+            "found": true,
+            "report_mention": "Raj Kapoor confirmed the UNIQUE constraint was in place, duplicates stopped, and automated refunds started."
+          },
+          {
+            "ground_truth": "All 32 refunds processed",
+            "found": true,
+            "report_mention": "Raj Kapoor confirmed all 32 refunds were processed and customers were notified via email."
+          }
+        ],
+        "recall": 0.8,
+        "found_count": 4,
+        "total_count": 5
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Application-level idempotency without database-level enforcement",
+            "found": true,
+            "report_mention": "Absence of database-level unique constraints or distributed locking mechanisms (e.g., Redis locks) to guarantee atomic payment execution."
+          },
+          {
+            "ground_truth": "Flash sale caused 9x normal traffic, exposing the race condition",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No load testing of the payment path at flash-sale traffic levels",
+            "found": true,
+            "report_mention": "Lack of automated testing regarding high-concurrency race conditions and idempotency verification under simulated flash sale traffic."
+          },
+          {
+            "ground_truth": "Idempotency implementation was added recently without a concurrent-access test",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.5,
+        "found_count": 2,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 100,
+        "violations": []
+      },
+      "completeness_score": {
+        "score": 100,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items",
+          "Lessons Learned"
+        ],
+        "missing": []
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 35,
+        "word_count": 1286,
+        "has_risk_matrix": true,
+        "has_prevention_analysis": true,
+        "has_forensic_diff": true,
+        "root_cause_keyword_overlap": 0.74
+      },
+      "weighted_score": 88.5
+    },
+    "baseline": {
+      "root_cause_accuracy": {
+        "accuracy": "wrong",
+        "score": 0.0,
+        "explanation": "The ground truth identifies a race condition caused by a read-then-write pattern without row-level locking during high concurrency. The report incorrectly blames a database connection limit issue due to a deployment."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "Flash sale started \u2014 traffic surges to 450 req/s",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "First duplicate charge detected",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Race condition identified in idempotency check",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Database UNIQUE constraint applied \u2014 duplicates stopped",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "All 32 refunds processed",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 5
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Application-level idempotency without database-level enforcement",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Flash sale caused 9x normal traffic, exposing the race condition",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No load testing of the payment path at flash-sale traffic levels",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Idempotency implementation was added recently without a concurrent-access test",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 85,
+        "violations": [
+          {
+            "line": 16,
+            "pattern": "the developer forgot",
+            "context": "The service had a database issue after the deployment. The developer forgot to verify connection limits under load.",
+            "suggestion": "Consider replacing with: \"was not part of the checklist\""
+          }
+        ]
+      },
+      "completeness_score": {
+        "score": 87,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items"
+        ],
+        "missing": [
+          "Lessons Learned"
+        ]
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 0,
+        "word_count": 116,
+        "has_risk_matrix": false,
+        "has_prevention_analysis": false,
+        "has_forensic_diff": false,
+        "root_cause_keyword_overlap": 0.09
+      },
+      "weighted_score": 32.2
+    }
   },
   {
     "incident_id": 7,
-    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 32.002808822s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.6-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '32s'}]}}]"
+    "incident_name": "incident_07_disk_exhaustion",
+    "agent": {
+      "root_cause_accuracy": {
+        "accuracy": "exact",
+        "score": 1.0,
+        "explanation": "The report precisely matches the ground truth, identifying that log rotation was disabled during debugging and left un-reverted, which caused 180GB of logs to accumulate and completely fill the disk, halting the data pipeline."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "Log rotation disabled for debugging",
+            "found": true,
+            "report_mention": "Log rotation was disabled and configuration parameters were updated in config/data-pipeline.yaml during a debugging session."
+          },
+          {
+            "ground_truth": "75% disk warning \u2014 not acted on",
+            "found": true,
+            "report_mention": "Datadog triggered a warning as disk usage reached 75% on host data-pipeline-01."
+          },
+          {
+            "ground_truth": "90% disk warning \u2014 not acted on",
+            "found": true,
+            "report_mention": "Datadog triggered a warning as disk usage increased to 90% on host data-pipeline-01."
+          },
+          {
+            "ground_truth": "Disk full \u2014 pipeline halts",
+            "found": true,
+            "report_mention": "PagerDuty critical alert triggered for data-pipeline halt due to disk full condition."
+          },
+          {
+            "ground_truth": "Logs cleaned, rotation re-enabled",
+            "found": true,
+            "report_mention": "Maya Singh cleaned old logs and re-enabled log rotation to recover the pipeline."
+          },
+          {
+            "ground_truth": "Pipeline resumed",
+            "found": true,
+            "report_mention": "Maya Singh reported the pipeline was back and processing the backlog with no data loss."
+          }
+        ],
+        "recall": 1.0,
+        "found_count": 6,
+        "total_count": 6
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Config change to disable log rotation was committed without a corresponding revert ticket or reminder",
+            "found": true,
+            "report_mention": "Configuration parameters in config/data-pipeline.yaml were updated during a debugging session to disable log rotation and left un-reverted in production"
+          },
+          {
+            "ground_truth": "Disk usage alerts at 75% and 90% were not acted upon \u2014 treated as non-urgent",
+            "found": true,
+            "report_mention": "Early warning telemetry (75% and 90% disk usage alerts) during the multi-day accumulation phase failed to trigger active operational intervention"
+          },
+          {
+            "ground_truth": "No automated policy to prevent log rotation from being disabled for more than 24 hours",
+            "found": true,
+            "report_mention": "Absence of automated configuration guardrails: No TTLs or validation rules existed to prevent temporary debugging changes from persisting in production manifests"
+          },
+          {
+            "ground_truth": "Debugging investigation concluded but the config revert was forgotten",
+            "found": true,
+            "report_mention": "Temporary debugging configuration change from Aug 5... un-reverted debugging configuration change"
+          }
+        ],
+        "recall": 1.0,
+        "found_count": 4,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 100,
+        "violations": []
+      },
+      "completeness_score": {
+        "score": 100,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items",
+          "Lessons Learned"
+        ],
+        "missing": []
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 19,
+        "word_count": 1537,
+        "has_risk_matrix": true,
+        "has_prevention_analysis": true,
+        "has_forensic_diff": true,
+        "root_cause_keyword_overlap": 0.76
+      },
+      "weighted_score": 100.0
+    },
+    "baseline": {
+      "root_cause_accuracy": {
+        "accuracy": "wrong",
+        "score": 0.0,
+        "explanation": "The report blames a database issue and connection limits after a deployment, which is completely unrelated to the ground truth of a full disk caused by disabled log rotation accumulating 180GB of logs."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "Log rotation disabled for debugging",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "75% disk warning \u2014 not acted on",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "90% disk warning \u2014 not acted on",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Disk full \u2014 pipeline halts",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Logs cleaned, rotation re-enabled",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Pipeline resumed",
+            "found": true,
+            "report_mention": "Fix applied and service restored"
+          }
+        ],
+        "recall": 0.17,
+        "found_count": 1,
+        "total_count": 6
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Config change to disable log rotation was committed without a corresponding revert ticket or reminder",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Disk usage alerts at 75% and 90% were not acted upon \u2014 treated as non-urgent",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No automated policy to prevent log rotation from being disabled for more than 24 hours",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Debugging investigation concluded but the config revert was forgotten",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 85,
+        "violations": [
+          {
+            "line": 16,
+            "pattern": "the developer forgot",
+            "context": "The service had a database issue after the deployment. The developer forgot to verify connection limits under load.",
+            "suggestion": "Consider replacing with: \"was not part of the checklist\""
+          }
+        ]
+      },
+      "completeness_score": {
+        "score": 87,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items"
+        ],
+        "missing": [
+          "Lessons Learned"
+        ]
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 0,
+        "word_count": 116,
+        "has_risk_matrix": false,
+        "has_prevention_analysis": false,
+        "has_forensic_diff": false,
+        "root_cause_keyword_overlap": 0.06
+      },
+      "weighted_score": 35.6
+    }
   },
   {
     "incident_id": 8,
-    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 23.206245906s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.6-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '23s'}]}}]"
+    "incident_name": "incident_08_rate_limiting",
+    "agent": {
+      "root_cause_accuracy": {
+        "accuracy": "exact",
+        "score": 1.0,
+        "explanation": "The report correctly identifies the primary root cause (uncoordinated 50K marketing campaign exhausting the shared SendGrid quota and lack of separation between campaign and transactional email queues), while also identifying a secondary cascading factor introduced during mitigation."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "50K email campaign launched",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "SendGrid rate limit hit \u2014 all emails blocked",
+            "found": true,
+            "report_mention": "email-service receives HTTP 429 Too Many Requests errors from SendGrid"
+          },
+          {
+            "ground_truth": "Transactional emails (password resets, order confirmations) blocked",
+            "found": true,
+            "report_mention": "notification-service fails to send critical transactional emails"
+          },
+          {
+            "ground_truth": "Queue split implemented \u2014 transactional emails prioritized",
+            "found": true,
+            "report_mention": "Kim Park splits email queues and throttles campaign traffic"
+          },
+          {
+            "ground_truth": "Transactional emails restored",
+            "found": true,
+            "report_mention": "PagerDuty reports email service fully recovered"
+          }
+        ],
+        "recall": 0.8,
+        "found_count": 4,
+        "total_count": 5
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Single email queue shared between marketing campaigns and transactional emails",
+            "found": true,
+            "report_mention": "Architectural Coupling: Bulk marketing and critical transactional email queues shared a single unpartitioned SendGrid endpoint"
+          },
+          {
+            "ground_truth": "No rate limiting or throttling on campaign email sending",
+            "found": true,
+            "report_mention": "Absence of cross-departmental visibility and rate-limiting governance regarding external API provider quotas"
+          },
+          {
+            "ground_truth": "Marketing team unaware of shared API quota \u2014 no coordination process for large campaigns",
+            "found": true,
+            "report_mention": "Process Gap: Absence of cross-departmental visibility and rate-limiting governance regarding external API provider quotas"
+          },
+          {
+            "ground_truth": "No priority system to protect transactional emails during high-volume sends",
+            "found": true,
+            "report_mention": "Bulk marketing and critical transactional email queues shared a single unpartitioned SendGrid endpoint"
+          }
+        ],
+        "recall": 1.0,
+        "found_count": 4,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 100,
+        "violations": []
+      },
+      "completeness_score": {
+        "score": 100,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items",
+          "Lessons Learned"
+        ],
+        "missing": []
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 29,
+        "word_count": 1186,
+        "has_risk_matrix": true,
+        "has_prevention_analysis": true,
+        "has_forensic_diff": true,
+        "root_cause_keyword_overlap": 0.79
+      },
+      "weighted_score": 96.0
+    },
+    "baseline": {
+      "root_cause_accuracy": {
+        "accuracy": "wrong",
+        "score": 0.0,
+        "explanation": "The report blames a database issue and connection limits due to a deployment, whereas the ground truth root cause is that a marketing email campaign exhausted the shared SendGrid API quota due to a lack of queue separation."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "50K email campaign launched",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "SendGrid rate limit hit \u2014 all emails blocked",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Transactional emails (password resets, order confirmations) blocked",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Queue split implemented \u2014 transactional emails prioritized",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Transactional emails restored",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 5
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Single email queue shared between marketing campaigns and transactional emails",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No rate limiting or throttling on campaign email sending",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Marketing team unaware of shared API quota \u2014 no coordination process for large campaigns",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No priority system to protect transactional emails during high-volume sends",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 85,
+        "violations": [
+          {
+            "line": 16,
+            "pattern": "the developer forgot",
+            "context": "The service had a database issue after the deployment. The developer forgot to verify connection limits under load.",
+            "suggestion": "Consider replacing with: \"was not part of the checklist\""
+          }
+        ]
+      },
+      "completeness_score": {
+        "score": 87,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items"
+        ],
+        "missing": [
+          "Lessons Learned"
+        ]
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 0,
+        "word_count": 116,
+        "has_risk_matrix": false,
+        "has_prevention_analysis": false,
+        "has_forensic_diff": false,
+        "root_cause_keyword_overlap": 0.0
+      },
+      "weighted_score": 32.2
+    }
   },
   {
     "incident_id": 9,
-    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 14.432586708s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.6-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '14s'}]}}]"
+    "incident_name": "incident_09_crash_loop",
+    "agent": {
+      "root_cause_accuracy": {
+        "accuracy": "exact",
+        "score": 1.0,
+        "explanation": "The report precisely identifies the root cause: the new /healthz endpoint performing a database check was used as the Kubernetes liveness probe without an initial delay, causing connection pool timeout failures, repeated container restarts, and a CrashLoopBackOff state."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "Deploy v4.1.0 with new health check",
+            "found": true,
+            "report_mention": "Commit k8s001 pushed deploying `/healthz` DB check directly as a liveness probe without startup delay."
+          },
+          {
+            "ground_truth": "Liveness probe fails \u2014 DB not ready during startup",
+            "found": true,
+            "report_mention": "Auth-service liveness probe failed as database connection pool was not yet ready during startup."
+          },
+          {
+            "ground_truth": "CrashLoopBackOff \u2014 authentication unavailable",
+            "found": true,
+            "report_mention": "AlertBot triggered critical alert reporting auth-service in `CrashLoopBackOff`. / PagerDuty triggered critical alert for 'Authentication Unavailable' (zero healthy pods)."
+          },
+          {
+            "ground_truth": "Root cause identified",
+            "found": true,
+            "report_mention": "On-call engineer identified faulty liveness probe configuration in recent deployment."
+          },
+          {
+            "ground_truth": "Hotfix deployed \u2014 proper probe configuration",
+            "found": true,
+            "report_mention": "Configuration fix applied: added initial delay and moved DB check to readiness probe."
+          },
+          {
+            "ground_truth": "Auth service recovered",
+            "found": true,
+            "report_mention": "Verification confirmed pods are stable and authentication traffic is fully recovered."
+          }
+        ],
+        "recall": 1.0,
+        "found_count": 6,
+        "total_count": 6
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "DB connectivity check was used as liveness probe instead of readiness probe",
+            "found": true,
+            "report_mention": "Conflation of Probe Semantics: Using a container-destroying liveness check for transient external dependencies rather than traffic-isolating readiness checks"
+          },
+          {
+            "ground_truth": "No initialDelaySeconds configured on the liveness probe",
+            "found": true,
+            "report_mention": "No initialDelaySeconds causes premature container kills during DB bootstrap"
+          },
+          {
+            "ground_truth": "No Kubernetes health check review process for new deployments",
+            "found": true,
+            "report_mention": "Absence of CI/CD policy gates and staging environment validation capable of catching startup dependency failures"
+          },
+          {
+            "ground_truth": "Staging environment had faster DB startup so the issue didn't surface there",
+            "found": true,
+            "report_mention": "Staging environments lacked the strict dependency initialization constraints needed to surface startup race conditions prior to production deployment"
+          }
+        ],
+        "recall": 1.0,
+        "found_count": 4,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 100,
+        "violations": []
+      },
+      "completeness_score": {
+        "score": 100,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items",
+          "Lessons Learned"
+        ],
+        "missing": []
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 22,
+        "word_count": 1360,
+        "has_risk_matrix": true,
+        "has_prevention_analysis": true,
+        "has_forensic_diff": true,
+        "root_cause_keyword_overlap": 0.75
+      },
+      "weighted_score": 100.0
+    },
+    "baseline": {
+      "root_cause_accuracy": {
+        "accuracy": "wrong",
+        "score": 0.0,
+        "explanation": "The report incorrectly attributes the issue to database connection limits under load, whereas the true root cause was a missing initialDelaySeconds on the Kubernetes liveness probe causing a CrashLoopBackOff due to the database connection pool taking time to initialize on startup."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "Deploy v4.1.0 with new health check",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Liveness probe fails \u2014 DB not ready during startup",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "CrashLoopBackOff \u2014 authentication unavailable",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Root cause identified",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Hotfix deployed \u2014 proper probe configuration",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Auth service recovered",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 6
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "DB connectivity check was used as liveness probe instead of readiness probe",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No initialDelaySeconds configured on the liveness probe",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No Kubernetes health check review process for new deployments",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Staging environment had faster DB startup so the issue didn't surface there",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 85,
+        "violations": [
+          {
+            "line": 16,
+            "pattern": "the developer forgot",
+            "context": "The service had a database issue after the deployment. The developer forgot to verify connection limits under load.",
+            "suggestion": "Consider replacing with: \"was not part of the checklist\""
+          }
+        ]
+      },
+      "completeness_score": {
+        "score": 87,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items"
+        ],
+        "missing": [
+          "Lessons Learned"
+        ]
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 0,
+        "word_count": 116,
+        "has_risk_matrix": false,
+        "has_prevention_analysis": false,
+        "has_forensic_diff": false,
+        "root_cause_keyword_overlap": 0.12
+      },
+      "weighted_score": 32.2
+    }
   },
   {
     "incident_id": 10,
-    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 5.810174836s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-3.6-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '5s'}]}}]"
+    "incident_name": "incident_10_schema_migration",
+    "agent": {
+      "root_cause_accuracy": {
+        "accuracy": "exact",
+        "score": 1.0,
+        "explanation": "The report accurately identifies the root cause as an out-of-order migration sequence where migration 043 depended on a function in migration 044, which had not yet been defined. It correctly captures the resulting impact on data and downstream systems."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "Migrations run \u2014 042 succeeds, 043 fails due to missing function",
+            "found": true,
+            "report_mention": "migration-runner failed migration_043 because it referenced a non-existent function in migration_044"
+          },
+          {
+            "ground_truth": "ETL pipeline fails on NULL status values",
+            "found": true,
+            "report_mention": "data-pipeline ETL job failed with a NOT NULL constraint violation on analytics table"
+          },
+          {
+            "ground_truth": "Root cause identified \u2014 migration ordering bug",
+            "found": true,
+            "report_mention": "Maya Singh discovered migration_043 function dependency mismatch"
+          },
+          {
+            "ground_truth": "Migrations manually reordered and re-run",
+            "found": true,
+            "report_mention": "Maya Singh initiated manual remediation to execute migration 044 first and re-run pipeline"
+          },
+          {
+            "ground_truth": "Data pipeline and dashboards recovered",
+            "found": true,
+            "report_mention": "Maya Singh confirmed all migrations, pipelines, and dashboards were fully restored"
+          }
+        ],
+        "recall": 1.0,
+        "found_count": 5,
+        "total_count": 5
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Migrations were split into 3 parts but numbered incorrectly \u2014 dependency ordering was wrong",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Migration 042 committed independently, so the column existed without data even after 043 failed",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No migration dependency validation in the migration runner",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No dry-run or staging test of the migration sequence before production",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 100,
+        "violations": []
+      },
+      "completeness_score": {
+        "score": 100,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items",
+          "Lessons Learned"
+        ],
+        "missing": []
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 36,
+        "word_count": 1365,
+        "has_risk_matrix": true,
+        "has_prevention_analysis": true,
+        "has_forensic_diff": true,
+        "root_cause_keyword_overlap": 0.78
+      },
+      "weighted_score": 85.0
+    },
+    "baseline": {
+      "root_cause_accuracy": {
+        "accuracy": "wrong",
+        "score": 0.0,
+        "explanation": "The report blames a database connection limit issue under load, which is completely unrelated to the ground truth root cause regarding incorrectly numbered schema migrations and missing functions."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "Migrations run \u2014 042 succeeds, 043 fails due to missing function",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "ETL pipeline fails on NULL status values",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Root cause identified \u2014 migration ordering bug",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Migrations manually reordered and re-run",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Data pipeline and dashboards recovered",
+            "found": true,
+            "report_mention": "Fix applied and service restored"
+          }
+        ],
+        "recall": 0.2,
+        "found_count": 1,
+        "total_count": 5
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Migrations were split into 3 parts but numbered incorrectly \u2014 dependency ordering was wrong",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Migration 042 committed independently, so the column existed without data even after 043 failed",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No migration dependency validation in the migration runner",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "No dry-run or staging test of the migration sequence before production",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 85,
+        "violations": [
+          {
+            "line": 16,
+            "pattern": "the developer forgot",
+            "context": "The service had a database issue after the deployment. The developer forgot to verify connection limits under load.",
+            "suggestion": "Consider replacing with: \"was not part of the checklist\""
+          }
+        ]
+      },
+      "completeness_score": {
+        "score": 87,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items"
+        ],
+        "missing": [
+          "Lessons Learned"
+        ]
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 0,
+        "word_count": 116,
+        "has_risk_matrix": false,
+        "has_prevention_analysis": false,
+        "has_forensic_diff": false,
+        "root_cause_keyword_overlap": 0.04
+      },
+      "weighted_score": 36.2
+    }
   },
   {
     "incident_id": 11,
-    "error": "LLM call failed after 3 attempts: Error code: 429 - [{'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 57.229021137s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.6-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '57s'}]}}]"
+    "incident_name": "incident_11_mega_payment_outage",
+    "agent": {
+      "root_cause_accuracy": {
+        "accuracy": "exact",
+        "score": 1.0,
+        "explanation": "The report accurately identifies the exact root cause, citing the specific configuration change (increasing max.poll.records without adjusting max.poll.interval.ms), the resulting consumer rebalance storms, uncommitted database transactions, connection pool exhaustion, and the cascading HTTP 504 timeouts matching the ground truth."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "PR #142 deployed by Dave Kumar setting max.poll.records=5000 on payment-workers-v2",
+            "found": true,
+            "report_mention": "PR #142 deployed increasing Kafka max.poll.records batch size to 5000 without scaling max.poll.interval.ms."
+          },
+          {
+            "ground_truth": "PagerDuty P1 alert: PaymentGatewayLatencyP99Exceeded (p99 latency > 24,000ms)",
+            "found": true,
+            "report_mention": "PagerDuty critical alert fired for PaymentGatewayLatencyP99Exceeded (p99 at 24,100ms)."
+          },
+          {
+            "ground_truth": "PagerDuty P1 alert: KafkaConsumerLagExceeded (> 350,000 messages)",
+            "found": true,
+            "report_mention": "PagerDuty critical alert fired for KafkaConsumerLagExceeded (>350,000 messages)."
+          },
+          {
+            "ground_truth": "Elena Rostova flags Postgres connection pool at 98% and DeadlockDetected on payment_transactions",
+            "found": true,
+            "report_mention": "Postgres database logs first deadlock on payment_transactions relation on shard_1."
+          },
+          {
+            "ground_truth": "Sarah Chen identifies root cause: 5000 batch size exceeds max.poll.interval.ms triggering rebalance storm and uncommitted DB locks",
+            "found": true,
+            "report_mention": "Root cause confirmed linking uncommitted consumer batches to open Postgres row locks."
+          },
+          {
+            "ground_truth": "Decision: Deploy hotfix reverting batch size to 100 and terminate idle locking Postgres backends",
+            "found": true,
+            "report_mention": "Manual intervention executed to terminate idle Postgres backend sessions holding locks."
+          },
+          {
+            "ground_truth": "Hotfix commit d3e2a1b (PR #143) deployed by Dave Kumar",
+            "found": true,
+            "report_mention": "PR #143 hotfix deployed, reverting consumer batch size to 500 and clearing consumer lag."
+          },
+          {
+            "ground_truth": "Payment latency restored to 95ms; all 68k checkout backlog cleared; incident resolved",
+            "found": true,
+            "report_mention": "Latency normalized and incident officially declared resolved."
+          }
+        ],
+        "recall": 1.0,
+        "found_count": 8,
+        "total_count": 8
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Kafka consumer batch size increased 50x without load testing or heartbeat interval adjustments.",
+            "found": true,
+            "report_mention": "An unvalidated configuration change increasing Kafka max.poll.records to 5000 without scaling max.poll.interval.ms caused processing timeouts"
+          },
+          {
+            "ground_truth": "PostgreSQL transaction timeout and statement timeout were not set, allowing orphaned sessions to hold ExclusiveLocks indefinitely.",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Absence of a circuit breaker between payment-gateway and kafka-consumer to shed load during rebalance cycles.",
+            "found": true,
+            "report_mention": "Absence of circuit breakers and connection pool queue limits between Kafka event ingestion and the primary relational database."
+          },
+          {
+            "ground_truth": "Deploy was rolled out directly to 100% of payment worker nodes without a canary stage.",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.5,
+        "found_count": 2,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 100,
+        "violations": []
+      },
+      "completeness_score": {
+        "score": 75,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution"
+        ],
+        "missing": [
+          "Action Items",
+          "Lessons Learned"
+        ]
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 41,
+        "word_count": 1221,
+        "has_risk_matrix": true,
+        "has_prevention_analysis": false,
+        "has_forensic_diff": true,
+        "root_cause_keyword_overlap": 0.63
+      },
+      "weighted_score": 90.0
+    },
+    "baseline": {
+      "root_cause_accuracy": {
+        "accuracy": "wrong",
+        "score": 0.0,
+        "explanation": "The report blames a generic database issue and unverified connection limits, completely missing the actual root cause involving Kafka consumer batch size configuration, poll timeouts, rebalance storms, and uncommitted transaction locks."
+      },
+      "timeline_recall": {
+        "events_found": [
+          {
+            "ground_truth": "PR #142 deployed by Dave Kumar setting max.poll.records=5000 on payment-workers-v2",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "PagerDuty P1 alert: PaymentGatewayLatencyP99Exceeded (p99 latency > 24,000ms)",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "PagerDuty P1 alert: KafkaConsumerLagExceeded (> 350,000 messages)",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Elena Rostova flags Postgres connection pool at 98% and DeadlockDetected on payment_transactions",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Sarah Chen identifies root cause: 5000 batch size exceeds max.poll.interval.ms triggering rebalance storm and uncommitted DB locks",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Decision: Deploy hotfix reverting batch size to 100 and terminate idle locking Postgres backends",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Hotfix commit d3e2a1b (PR #143) deployed by Dave Kumar",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Payment latency restored to 95ms; all 68k checkout backlog cleared; incident resolved",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 8
+      },
+      "contributing_factors_recall": {
+        "factors_found": [
+          {
+            "ground_truth": "Kafka consumer batch size increased 50x without load testing or heartbeat interval adjustments.",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "PostgreSQL transaction timeout and statement timeout were not set, allowing orphaned sessions to hold ExclusiveLocks indefinitely.",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Absence of a circuit breaker between payment-gateway and kafka-consumer to shed load during rebalance cycles.",
+            "found": false,
+            "report_mention": null
+          },
+          {
+            "ground_truth": "Deploy was rolled out directly to 100% of payment worker nodes without a canary stage.",
+            "found": false,
+            "report_mention": null
+          }
+        ],
+        "recall": 0.0,
+        "found_count": 0,
+        "total_count": 4
+      },
+      "blameless_score": {
+        "score": 85,
+        "violations": [
+          {
+            "line": 16,
+            "pattern": "the developer forgot",
+            "context": "The service had a database issue after the deployment. The developer forgot to verify connection limits under load.",
+            "suggestion": "Consider replacing with: \"was not part of the checklist\""
+          }
+        ]
+      },
+      "completeness_score": {
+        "score": 87,
+        "present": [
+          "Executive Summary",
+          "Impact",
+          "Timeline",
+          "Root Cause",
+          "Contributing Factors",
+          "Resolution",
+          "Action Items"
+        ],
+        "missing": [
+          "Lessons Learned"
+        ]
+      },
+      "deterministic_metrics": {
+        "evidence_citation_count": 0,
+        "word_count": 116,
+        "has_risk_matrix": false,
+        "has_prevention_analysis": false,
+        "has_forensic_diff": false,
+        "root_cause_keyword_overlap": 0.07
+      },
+      "weighted_score": 32.2
+    }
   }
 ]

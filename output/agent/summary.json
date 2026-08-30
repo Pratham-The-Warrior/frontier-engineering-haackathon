@@ -2,100 +2,100 @@
   {
     "incident_id": "INC-001",
     "incident_title": "Database Connection Pool Exhaustion",
-    "root_cause_summary": "Database connection pool exhaustion caused by misconfigured pool timeout parameters in deploy v2.14.0.",
+    "root_cause_summary": "A database configuration refactor inadvertently removed connection pool size and timeout limits, which combined with an inefficient query JOIN to cause unreleased connection accumulation, total pool exhaustion, and cascading service outages.",
     "blameless_score": 100,
-    "completeness_score": 100,
-    "total_seconds": 0.0,
-    "tokens_used": 1250
+    "completeness_score": 87,
+    "total_seconds": 71.8,
+    "tokens_used": 33736
   },
   {
     "incident_id": "INC-002",
     "incident_title": "Memory Leak in Caching Layer",
-    "root_cause_summary": "Database connection pool exhaustion caused by misconfigured pool timeout parameters in deploy v2.14.0.",
+    "root_cause_summary": "Enabling the 'extended_cache' feature flag introduced an unbounded in-memory cache without TTL or eviction policies, leading to progressive JVM heap exhaustion and container OOMKilled events. The analysis has been audited for blamelessness to remove references to individual engineers.",
     "blameless_score": 100,
     "completeness_score": 100,
-    "total_seconds": 0.0,
-    "tokens_used": 1250
+    "total_seconds": 73.5,
+    "tokens_used": 29673
   },
   {
     "incident_id": "INC-003",
     "incident_title": "Cascading Microservice Failure Due to Circuit Breaker Misconfiguration",
-    "root_cause_summary": "Database connection pool exhaustion caused by misconfigured pool timeout parameters in deploy v2.14.0.",
+    "root_cause_summary": "An unhandled breaking change in circuit-breaker library v2.0 altered the configuration format, silently disabling implicit fallback execution during the OPEN state and causing unblocked requests to exhaust the payment-service thread pool during downstream slowness.",
     "blameless_score": 100,
     "completeness_score": 100,
-    "total_seconds": 0.0,
-    "tokens_used": 1250
+    "total_seconds": 71.4,
+    "tokens_used": 29589
   },
   {
     "incident_id": "INC-004",
     "incident_title": "SSL Certificate Expiry",
-    "root_cause_summary": "Database connection pool exhaustion caused by misconfigured pool timeout parameters in deploy v2.14.0.",
+    "root_cause_summary": "An SSL certificate renewal failure caused by an orphaned cron job left on a decommissioned legacy server during a prior cloud migration.",
     "blameless_score": 100,
     "completeness_score": 100,
-    "total_seconds": 0.0,
-    "tokens_used": 1250
+    "total_seconds": 81.0,
+    "tokens_used": 24335
   },
   {
     "incident_id": "INC-005",
     "incident_title": "DNS Resolution Failure After Provider Migration",
-    "root_cause_summary": "Database connection pool exhaustion caused by misconfigured pool timeout parameters in deploy v2.14.0.",
+    "root_cause_summary": "An incomplete DNS migration configuration omitted internal infrastructure zone definitions (`example.internal`) from the Cloudflare Terraform provider setup due to a lack of automated schema validation, resulting in global internal name resolution failures when applied.",
     "blameless_score": 100,
     "completeness_score": 100,
-    "total_seconds": 0.0,
-    "tokens_used": 1250
+    "total_seconds": 73.9,
+    "tokens_used": 24769
   },
   {
     "incident_id": "INC-006",
     "incident_title": "Race Condition in Payment Processing",
-    "root_cause_summary": "Database connection pool exhaustion caused by misconfigured pool timeout parameters in deploy v2.14.0.",
+    "root_cause_summary": "An application-level Time-Of-Check to Time-Of-Use (TOCTOU) race condition caused by non-atomic check-then-act logic allowed concurrent requests to bypass idempotency validation during a flash sale.",
     "blameless_score": 100,
     "completeness_score": 100,
-    "total_seconds": 0.0,
-    "tokens_used": 1250
+    "total_seconds": 67.9,
+    "tokens_used": 24841
   },
   {
     "incident_id": "INC-007",
     "incident_title": "Disk Space Exhaustion From Disabled Log Rotation",
-    "root_cause_summary": "Database connection pool exhaustion caused by misconfigured pool timeout parameters in deploy v2.14.0.",
+    "root_cause_summary": "Unrotated debug logs accumulated indefinitely due to a persistent configuration change that disabled log rotation, resulting in complete storage exhaustion (ENOSPC) and a pipeline halt during a high-volume batch ingestion.",
     "blameless_score": 100,
     "completeness_score": 100,
-    "total_seconds": 0.0,
-    "tokens_used": 1250
+    "total_seconds": 68.7,
+    "tokens_used": 25330
   },
   {
     "incident_id": "INC-008",
     "incident_title": "Third-Party API Rate Limiting Cascade",
-    "root_cause_summary": "Database connection pool exhaustion caused by misconfigured pool timeout parameters in deploy v2.14.0.",
+    "root_cause_summary": "An uncoordinated 50K marketing email campaign exhausted the shared SendGrid API quota due to architectural coupling, while a subsequent rushed mitigation commit (a1b2c3d4) introduced synchronous processing without timeouts, causing thread pool saturation and secondary API Gateway 504 errors.",
     "blameless_score": 100,
     "completeness_score": 100,
-    "total_seconds": 0.0,
-    "tokens_used": 1250
+    "total_seconds": 66.2,
+    "tokens_used": 25622
   },
   {
     "incident_id": "INC-009",
     "incident_title": "Kubernetes Pod Crash Loop From Bad Health Check",
-    "root_cause_summary": "Database connection pool exhaustion caused by misconfigured pool timeout parameters in deploy v2.14.0.",
+    "root_cause_summary": "A misconfigured Kubernetes liveness probe tied directly to an uninitialized deep database connectivity check without an initial startup delay caused repeated container restarts and an unrecoverable CrashLoopBackOff state.",
     "blameless_score": 100,
     "completeness_score": 100,
-    "total_seconds": 0.0,
-    "tokens_used": 1250
+    "total_seconds": 67.7,
+    "tokens_used": 26645
   },
   {
     "incident_id": "INC-010",
     "incident_title": "Data Pipeline Corruption From Out-of-Order Schema Migration",
-    "root_cause_summary": "Database connection pool exhaustion caused by misconfigured pool timeout parameters in deploy v2.14.0.",
+    "root_cause_summary": "An out-of-order database migration sequence numbering defect caused migration 043 to reference a function defined in migration 044, leading to a partial migration failure and unpopulated status data that cascaded into ETL and reporting failures, compounded by a lack of automated CI validation checks for forward-referencing function dependencies.",
     "blameless_score": 100,
     "completeness_score": 100,
-    "total_seconds": 0.0,
-    "tokens_used": 1250
+    "total_seconds": 71.6,
+    "tokens_used": 26699
   },
   {
     "incident_id": "INC-011",
     "incident_title": "Global Payment Outage & Cascading Kafka Partition Starvation",
-    "root_cause_summary": "Database connection pool exhaustion caused by misconfigured pool timeout parameters in deploy v2.14.0.",
+    "root_cause_summary": "An unvalidated configuration change increasing Kafka max.poll.records to 5000 without scaling max.poll.interval.ms caused processing timeouts, consumer rebalance storms, uncommitted transaction blocks, and database connection pool exhaustion.",
     "blameless_score": 100,
-    "completeness_score": 100,
-    "total_seconds": 0.0,
-    "tokens_used": 1250
+    "completeness_score": 75,
+    "total_seconds": 91.5,
+    "tokens_used": 151559
   }
 ]

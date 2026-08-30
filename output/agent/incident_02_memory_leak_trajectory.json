@@ -19,13 +19,13 @@
   {
     "agent": "log_parser",
     "step": "llm_analysis",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 1813,
+      "completion_tokens": 917,
+      "total_tokens": 2730
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 3.4
   },
   {
     "agent": "comms_analyzer",
@@ -36,13 +36,13 @@
   {
     "agent": "comms_analyzer",
     "step": "llm_response",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 1040,
+      "completion_tokens": 1220,
+      "total_tokens": 2260
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 4.1
   },
   {
     "agent": "git_analyzer",
@@ -61,13 +61,13 @@
   {
     "agent": "git_analyzer",
     "step": "forensic_diff_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 1070,
+      "completion_tokens": 743,
+      "total_tokens": 1813
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 3.24
   },
   {
     "agent": "timeline_builder",
@@ -77,30 +77,32 @@
       "detect_gaps"
     ],
     "results": {
-      "cross_correlations_found": 0,
-      "timeline_gaps_found": 0,
-      "total_source_events": 1
+      "cross_correlations_found": 7,
+      "timeline_gaps_found": 8,
+      "total_source_events": 20
     }
   },
   {
     "agent": "timeline_builder",
     "step": "llm_synthesis",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 5661,
+      "completion_tokens": 3000,
+      "total_tokens": 8661
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 8.53
   },
   {
     "agent": "root_cause_analyzer",
     "step": "hypothesis_generation",
-    "hypotheses_count": 1,
+    "hypotheses_count": 3,
     "hypotheses": [
-      "Incident caused by primary service anomaly during recent configuration or code change."
+      "Hypothesis 1: The 'extended_cache' feature flag introduced an unbounded in-memory cache implementation lacking TTL, maximum size constraints, or least-recently-used (LRU) eviction policies. As tenants requested full catalogs, objects accumulated infinitely in the JVM heap, causing progressive memory bloat over several hours, severe GC thrashing, response latency degradation, and ultimately repeated container OOMKilled events.",
+      "Hypothesis 2: A lack of automated guardrails or safety checks during the feature flag rollout process allowed a non-production-ready, highly resource-intensive configuration to be pushed directly to production. The absence of pre-production load testing for per-tenant catalog caching meant that memory scaling characteristics under real-world traffic loads were completely unknown prior to the incident.",
+      "Hypothesis 3: Following the initial pod crash and automatic restart by Kubernetes, the service experienced a rapid secondary memory exhaustion loop because the underlying feature flag state remained globally enabled in configuration management. The application immediately began re-populating the unbounded cache upon receiving traffic post-restart, resulting in a secondary OutOfMemoryError within an hour before manual intervention successfully toggled the flag off."
     ],
-    "latency_seconds": 0.05
+    "latency_seconds": 2.36
   },
   {
     "agent": "root_cause_analyzer",
@@ -113,10 +115,24 @@
     "ranked_results": [
       {
         "rank": 1,
-        "hypothesis": "Incident caused by primary service anomaly during recent configuration or code c",
+        "hypothesis": "Hypothesis 1: The 'extended_cache' feature flag introduced an unbounded in-memor",
         "score": 1.0,
-        "evidence_strength": "moderate",
-        "supporting_count": 2
+        "evidence_strength": "strong",
+        "supporting_count": 10
+      },
+      {
+        "rank": 2,
+        "hypothesis": "Hypothesis 2: A lack of automated guardrails or safety checks during the feature",
+        "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 10
+      },
+      {
+        "rank": 3,
+        "hypothesis": "Hypothesis 3: Following the initial pod crash and automatic restart by Kubernete",
+        "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 10
       }
     ]
   },
@@ -125,7 +141,7 @@
     "step": "deep_causal_synthesis",
     "root_cause_category": "configuration",
     "confidence": "high",
-    "latency_seconds": 0.05
+    "latency_seconds": 5.46
   },
   {
     "agent": "root_cause_analyzer",
@@ -133,21 +149,21 @@
     "tools_used": [
       "assess_causal_chain"
     ],
-    "chain_valid": false,
-    "overall_confidence": "low",
+    "chain_valid": true,
+    "overall_confidence": "high",
     "issues_found": []
   },
   {
     "agent": "report_writer",
     "step": "report_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 10117,
+      "completion_tokens": 4092,
+      "total_tokens": 14209
     },
-    "latency_seconds": 0.05,
-    "report_length_chars": 7135
+    "latency_seconds": 12.25,
+    "report_length_chars": 12032
   },
   {
     "agent": "report_writer",
@@ -162,7 +178,7 @@
     "completeness_score": 100,
     "blameless_violations": 0,
     "missing_sections": [],
-    "evidence_citations_found": 24,
+    "evidence_citations_found": 26,
     "has_forensic_diff": true
   },
   {
@@ -171,19 +187,25 @@
     "context_snapshot": {
       "incident_id": "INC-002",
       "incident_title": "Memory Leak in Caching Layer",
-      "total_findings": 2,
-      "total_timeline_events": 4,
+      "total_findings": 10,
+      "total_timeline_events": 19,
       "total_canonical_events": 35,
       "findings_by_agent": {
-        "log_parser": 1,
-        "root_cause_analyzer": 1
+        "log_parser": 4,
+        "comms_analyzer": 1,
+        "git_analyzer": 1,
+        "root_cause_analyzer": 4
       },
       "findings_by_category": {
-        "error": 1,
-        "root_cause": 1
+        "error": 4,
+        "decision": 1,
+        "deploy": 1,
+        "root_cause": 1,
+        "contributing_factor": 3
       },
       "findings_by_severity": {
-        "warning": 1,
+        "warning": 7,
+        "info": 2,
         "critical": 1
       },
       "agent_summaries": {},

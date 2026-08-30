@@ -19,13 +19,13 @@
   {
     "agent": "log_parser",
     "step": "llm_analysis",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 1428,
+      "completion_tokens": 731,
+      "total_tokens": 2159
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 3.34
   },
   {
     "agent": "comms_analyzer",
@@ -36,13 +36,13 @@
   {
     "agent": "comms_analyzer",
     "step": "llm_response",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 720,
+      "completion_tokens": 796,
+      "total_tokens": 1516
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 3.22
   },
   {
     "agent": "git_analyzer",
@@ -61,13 +61,13 @@
   {
     "agent": "git_analyzer",
     "step": "forensic_diff_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 756,
+      "completion_tokens": 829,
+      "total_tokens": 1585
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 3.3
   },
   {
     "agent": "timeline_builder",
@@ -77,30 +77,32 @@
       "detect_gaps"
     ],
     "results": {
-      "cross_correlations_found": 0,
-      "timeline_gaps_found": 0,
-      "total_source_events": 1
+      "cross_correlations_found": 9,
+      "timeline_gaps_found": 5,
+      "total_source_events": 13
     }
   },
   {
     "agent": "timeline_builder",
     "step": "llm_synthesis",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 5180,
+      "completion_tokens": 2110,
+      "total_tokens": 7290
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 7.09
   },
   {
     "agent": "root_cause_analyzer",
     "step": "hypothesis_generation",
-    "hypotheses_count": 1,
+    "hypotheses_count": 3,
     "hypotheses": [
-      "Incident caused by primary service anomaly during recent configuration or code change."
+      "Hypothesis 1: Inadequate configuration change management and absence of automated guardrails allowed a temporary debugging change disabling log rotation to persist in production code, leading to cumulative disk exhaustion and a subsequent service halt during high-volume batch ingestion.",
+      "Hypothesis 2: Alert fatigue or lack of clear operational ownership during the multi-day accumulation phase caused the 75% and 90% Datadog disk space warnings to be ignored or deferred, delaying remediation until the scheduled batch job triggered a total write failure (ENOSPC).",
+      "Hypothesis 3: Lack of backpressure handling or disk space safeguards in the data pipeline application design caused the process to fail abruptly with a hard crash rather than gracefully degrading, pausing, or shedding non-critical logging when storage grew constrained."
     ],
-    "latency_seconds": 0.05
+    "latency_seconds": 2.15
   },
   {
     "agent": "root_cause_analyzer",
@@ -113,10 +115,24 @@
     "ranked_results": [
       {
         "rank": 1,
-        "hypothesis": "Incident caused by primary service anomaly during recent configuration or code c",
+        "hypothesis": "Hypothesis 1: Inadequate configuration change management and absence of automate",
         "score": 1.0,
-        "evidence_strength": "moderate",
-        "supporting_count": 2
+        "evidence_strength": "strong",
+        "supporting_count": 10
+      },
+      {
+        "rank": 2,
+        "hypothesis": "Hypothesis 2: Alert fatigue or lack of clear operational ownership during the mu",
+        "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 10
+      },
+      {
+        "rank": 3,
+        "hypothesis": "Hypothesis 3: Lack of backpressure handling or disk space safeguards in the data",
+        "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 10
       }
     ]
   },
@@ -125,7 +141,7 @@
     "step": "deep_causal_synthesis",
     "root_cause_category": "configuration",
     "confidence": "high",
-    "latency_seconds": 0.05
+    "latency_seconds": 5.24
   },
   {
     "agent": "root_cause_analyzer",
@@ -133,21 +149,21 @@
     "tools_used": [
       "assess_causal_chain"
     ],
-    "chain_valid": false,
-    "overall_confidence": "low",
+    "chain_valid": true,
+    "overall_confidence": "high",
     "issues_found": []
   },
   {
     "agent": "report_writer",
     "step": "report_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 8963,
+      "completion_tokens": 3817,
+      "total_tokens": 12780
     },
-    "latency_seconds": 0.05,
-    "report_length_chars": 7135
+    "latency_seconds": 10.98,
+    "report_length_chars": 12748
   },
   {
     "agent": "report_writer",
@@ -162,7 +178,7 @@
     "completeness_score": 100,
     "blameless_violations": 0,
     "missing_sections": [],
-    "evidence_citations_found": 24,
+    "evidence_citations_found": 19,
     "has_forensic_diff": true
   },
   {
@@ -171,19 +187,25 @@
     "context_snapshot": {
       "incident_id": "INC-007",
       "incident_title": "Disk Space Exhaustion From Disabled Log Rotation",
-      "total_findings": 2,
-      "total_timeline_events": 4,
+      "total_findings": 9,
+      "total_timeline_events": 11,
       "total_canonical_events": 18,
       "findings_by_agent": {
-        "log_parser": 1,
-        "root_cause_analyzer": 1
+        "log_parser": 3,
+        "comms_analyzer": 1,
+        "git_analyzer": 1,
+        "root_cause_analyzer": 4
       },
       "findings_by_category": {
-        "error": 1,
-        "root_cause": 1
+        "error": 3,
+        "decision": 1,
+        "deploy": 1,
+        "root_cause": 1,
+        "contributing_factor": 3
       },
       "findings_by_severity": {
-        "warning": 1,
+        "warning": 6,
+        "info": 2,
         "critical": 1
       },
       "agent_summaries": {},

@@ -19,13 +19,13 @@
   {
     "agent": "log_parser",
     "step": "llm_analysis",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 2284,
+      "completion_tokens": 1129,
+      "total_tokens": 3413
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 3.78
   },
   {
     "agent": "comms_analyzer",
@@ -36,13 +36,13 @@
   {
     "agent": "comms_analyzer",
     "step": "llm_response",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 1001,
+      "completion_tokens": 1187,
+      "total_tokens": 2188
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 4.04
   },
   {
     "agent": "git_analyzer",
@@ -61,13 +61,13 @@
   {
     "agent": "git_analyzer",
     "step": "forensic_diff_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 1264,
+      "completion_tokens": 921,
+      "total_tokens": 2185
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 3.33
   },
   {
     "agent": "timeline_builder",
@@ -77,30 +77,32 @@
       "detect_gaps"
     ],
     "results": {
-      "cross_correlations_found": 0,
-      "timeline_gaps_found": 0,
-      "total_source_events": 1
+      "cross_correlations_found": 28,
+      "timeline_gaps_found": 2,
+      "total_source_events": 21
     }
   },
   {
     "agent": "timeline_builder",
     "step": "llm_synthesis",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 5912,
+      "completion_tokens": 2525,
+      "total_tokens": 8437
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 7.86
   },
   {
     "agent": "root_cause_analyzer",
     "step": "hypothesis_generation",
-    "hypotheses_count": 1,
+    "hypotheses_count": 3,
     "hypotheses": [
-      "Incident caused by primary service anomaly during recent configuration or code change."
+      "Hypothesis 1: The circuit-breaker library upgrade to v2.0 introduced a breaking configuration format change that silently invalidated the fallback execution path, causing the circuit breaker to remain non-functional during OPEN state and leading directly to thread pool exhaustion in payment-service when inventory-service slowed down.",
+      "Hypothesis 2: Inadequate integration testing and missing canary deployments for core middleware libraries allowed a breaking change in error-handling behavior to slip into production without raising compilation or startup errors, leaving the system defenseless against downstream latency spikes.",
+      "Hypothesis 3: The lack of aggressive request timeout and bulkhead isolation configurations within the payment-service compounded the circuit breaker failure, allowing a single slow downstream dependency (inventory-service) to monopolize all execution threads and trigger a complete cascade of 503 errors across upstream checkout and notification services."
     ],
-    "latency_seconds": 0.05
+    "latency_seconds": 2.04
   },
   {
     "agent": "root_cause_analyzer",
@@ -113,19 +115,33 @@
     "ranked_results": [
       {
         "rank": 1,
-        "hypothesis": "Incident caused by primary service anomaly during recent configuration or code c",
+        "hypothesis": "Hypothesis 1: The circuit-breaker library upgrade to v2.0 introduced a breaking ",
         "score": 1.0,
-        "evidence_strength": "moderate",
-        "supporting_count": 2
+        "evidence_strength": "strong",
+        "supporting_count": 10
+      },
+      {
+        "rank": 2,
+        "hypothesis": "Hypothesis 2: Inadequate integration testing and missing canary deployments for ",
+        "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 5
+      },
+      {
+        "rank": 3,
+        "hypothesis": "Hypothesis 3: The lack of aggressive request timeout and bulkhead isolation conf",
+        "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 10
       }
     ]
   },
   {
     "agent": "root_cause_analyzer",
     "step": "deep_causal_synthesis",
-    "root_cause_category": "configuration",
+    "root_cause_category": "code_bug",
     "confidence": "high",
-    "latency_seconds": 0.05
+    "latency_seconds": 5.24
   },
   {
     "agent": "root_cause_analyzer",
@@ -133,21 +149,21 @@
     "tools_used": [
       "assess_causal_chain"
     ],
-    "chain_valid": false,
-    "overall_confidence": "low",
+    "chain_valid": true,
+    "overall_confidence": "high",
     "issues_found": []
   },
   {
     "agent": "report_writer",
     "step": "report_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 9615,
+      "completion_tokens": 3751,
+      "total_tokens": 13366
     },
-    "latency_seconds": 0.05,
-    "report_length_chars": 7135
+    "latency_seconds": 11.49,
+    "report_length_chars": 12902
   },
   {
     "agent": "report_writer",
@@ -162,7 +178,7 @@
     "completeness_score": 100,
     "blameless_violations": 0,
     "missing_sections": [],
-    "evidence_citations_found": 24,
+    "evidence_citations_found": 9,
     "has_forensic_diff": true
   },
   {
@@ -171,19 +187,25 @@
     "context_snapshot": {
       "incident_id": "INC-003",
       "incident_title": "Cascading Microservice Failure Due to Circuit Breaker Misconfiguration",
-      "total_findings": 2,
-      "total_timeline_events": 4,
+      "total_findings": 10,
+      "total_timeline_events": 17,
       "total_canonical_events": 32,
       "findings_by_agent": {
-        "log_parser": 1,
-        "root_cause_analyzer": 1
+        "log_parser": 5,
+        "comms_analyzer": 1,
+        "git_analyzer": 1,
+        "root_cause_analyzer": 3
       },
       "findings_by_category": {
-        "error": 1,
-        "root_cause": 1
+        "error": 5,
+        "decision": 1,
+        "deploy": 1,
+        "root_cause": 1,
+        "contributing_factor": 2
       },
       "findings_by_severity": {
-        "warning": 1,
+        "warning": 7,
+        "info": 2,
         "critical": 1
       },
       "agent_summaries": {},

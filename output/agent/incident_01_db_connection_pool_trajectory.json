@@ -19,13 +19,13 @@
   {
     "agent": "log_parser",
     "step": "llm_analysis",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 2608,
+      "completion_tokens": 1307,
+      "total_tokens": 3915
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 5.37
   },
   {
     "agent": "comms_analyzer",
@@ -36,13 +36,13 @@
   {
     "agent": "comms_analyzer",
     "step": "llm_response",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 1074,
+      "completion_tokens": 1278,
+      "total_tokens": 2352
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 4.29
   },
   {
     "agent": "git_analyzer",
@@ -61,13 +61,13 @@
   {
     "agent": "git_analyzer",
     "step": "forensic_diff_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 1860,
+      "completion_tokens": 1112,
+      "total_tokens": 2972
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 3.9
   },
   {
     "agent": "timeline_builder",
@@ -77,30 +77,32 @@
       "detect_gaps"
     ],
     "results": {
-      "cross_correlations_found": 0,
-      "timeline_gaps_found": 0,
-      "total_source_events": 1
+      "cross_correlations_found": 67,
+      "timeline_gaps_found": 4,
+      "total_source_events": 27
     }
   },
   {
     "agent": "timeline_builder",
     "step": "llm_synthesis",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 6502,
+      "completion_tokens": 3480,
+      "total_tokens": 9982
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 9.77
   },
   {
     "agent": "root_cause_analyzer",
     "step": "hypothesis_generation",
-    "hypotheses_count": 1,
+    "hypotheses_count": 3,
     "hypotheses": [
-      "Incident caused by primary service anomaly during recent configuration or code change."
+      "Hypothesis 1: The incident was primarily caused by a compound deployment flaw where refactored database connection configurations removed safety limits (pool size and timeouts), combined with an inefficient JOIN query that held onto connections longer than normal. Under normal traffic, this lack of timeouts caused hanging transactions to accumulate, permanently locking database handles until the entire connection pool was exhausted and downstream services cascaded into failure.",
+      "Hypothesis 2: The system lacked proactive circuit-breaking and graceful degradation mechanisms at the api-gateway and order-service layers. When user-service exhausted its connection pool, upstream services failed to shed load or serve cached fallbacks, directly translating internal resource starvation into widespread client-facing HTTP 503 errors and amplifying the blast radius.",
+      "Hypothesis 3: Inadequate code review and testing rigor for infrastructural configuration changes allowed a breaking refactor (commit a1b2c3d) to bypass static analysis and CI/CD policy gates. Because database configurations were modified alongside application query logic without automated schema or configuration validation, the flawed limits were pushed directly to production without triggering pre-deployment warnings."
     ],
-    "latency_seconds": 0.05
+    "latency_seconds": 2.35
   },
   {
     "agent": "root_cause_analyzer",
@@ -113,10 +115,24 @@
     "ranked_results": [
       {
         "rank": 1,
-        "hypothesis": "Incident caused by primary service anomaly during recent configuration or code c",
+        "hypothesis": "Hypothesis 1: The incident was primarily caused by a compound deployment flaw wh",
         "score": 1.0,
-        "evidence_strength": "moderate",
-        "supporting_count": 2
+        "evidence_strength": "strong",
+        "supporting_count": 10
+      },
+      {
+        "rank": 2,
+        "hypothesis": "Hypothesis 2: The system lacked proactive circuit-breaking and graceful degradat",
+        "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 10
+      },
+      {
+        "rank": 3,
+        "hypothesis": "Hypothesis 3: Inadequate code review and testing rigor for infrastructural confi",
+        "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 10
       }
     ]
   },
@@ -125,7 +141,7 @@
     "step": "deep_causal_synthesis",
     "root_cause_category": "configuration",
     "confidence": "high",
-    "latency_seconds": 0.05
+    "latency_seconds": 4.57
   },
   {
     "agent": "root_cause_analyzer",
@@ -133,21 +149,21 @@
     "tools_used": [
       "assess_causal_chain"
     ],
-    "chain_valid": false,
-    "overall_confidence": "low",
+    "chain_valid": true,
+    "overall_confidence": "high",
     "issues_found": []
   },
   {
     "agent": "report_writer",
     "step": "report_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 10423,
+      "completion_tokens": 4092,
+      "total_tokens": 14515
     },
-    "latency_seconds": 0.05,
-    "report_length_chars": 7135
+    "latency_seconds": 11.76,
+    "report_length_chars": 11709
   },
   {
     "agent": "report_writer",
@@ -159,10 +175,12 @@
       "diff_check"
     ],
     "blameless_score": 100,
-    "completeness_score": 100,
+    "completeness_score": 87,
     "blameless_violations": 0,
-    "missing_sections": [],
-    "evidence_citations_found": 24,
+    "missing_sections": [
+      "Lessons Learned"
+    ],
+    "evidence_citations_found": 53,
     "has_forensic_diff": true
   },
   {
@@ -171,19 +189,25 @@
     "context_snapshot": {
       "incident_id": "INC-001",
       "incident_title": "Database Connection Pool Exhaustion",
-      "total_findings": 2,
-      "total_timeline_events": 4,
+      "total_findings": 12,
+      "total_timeline_events": 24,
       "total_canonical_events": 36,
       "findings_by_agent": {
-        "log_parser": 1,
-        "root_cause_analyzer": 1
+        "log_parser": 6,
+        "comms_analyzer": 1,
+        "git_analyzer": 2,
+        "root_cause_analyzer": 3
       },
       "findings_by_category": {
-        "error": 1,
-        "root_cause": 1
+        "error": 6,
+        "decision": 1,
+        "deploy": 2,
+        "root_cause": 1,
+        "contributing_factor": 2
       },
       "findings_by_severity": {
-        "warning": 1,
+        "warning": 8,
+        "info": 3,
         "critical": 1
       },
       "agent_summaries": {},

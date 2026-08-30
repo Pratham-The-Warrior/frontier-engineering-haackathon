@@ -19,13 +19,13 @@
   {
     "agent": "log_parser",
     "step": "llm_analysis",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 1851,
+      "completion_tokens": 897,
+      "total_tokens": 2748
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 3.45
   },
   {
     "agent": "comms_analyzer",
@@ -36,13 +36,13 @@
   {
     "agent": "comms_analyzer",
     "step": "llm_response",
-    "model": "gpt-4o-mini",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 802,
+      "completion_tokens": 950,
+      "total_tokens": 1752
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 3.11
   },
   {
     "agent": "git_analyzer",
@@ -61,13 +61,13 @@
   {
     "agent": "git_analyzer",
     "step": "forensic_diff_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 962,
+      "completion_tokens": 801,
+      "total_tokens": 1763
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 2.93
   },
   {
     "agent": "timeline_builder",
@@ -77,30 +77,32 @@
       "detect_gaps"
     ],
     "results": {
-      "cross_correlations_found": 0,
-      "timeline_gaps_found": 0,
-      "total_source_events": 1
+      "cross_correlations_found": 23,
+      "timeline_gaps_found": 1,
+      "total_source_events": 13
     }
   },
   {
     "agent": "timeline_builder",
     "step": "llm_synthesis",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 5124,
+      "completion_tokens": 2172,
+      "total_tokens": 7296
     },
-    "latency_seconds": 0.05
+    "latency_seconds": 6.39
   },
   {
     "agent": "root_cause_analyzer",
     "step": "hypothesis_generation",
-    "hypotheses_count": 1,
+    "hypotheses_count": 3,
     "hypotheses": [
-      "Incident caused by primary service anomaly during recent configuration or code change."
+      "Hypothesis 1: Misconfigured Kubernetes liveness probe tied directly to an uninitialized deep dependency (/healthz with DB connectivity check) caused repeated pod restarts and a cascading CrashLoopBackOff because it lacked an initial delay to allow the database connection pool to spin up.",
+      "Hypothesis 2: Architectural pattern confusion between liveness and readiness probes led the engineering team to conflate service availability with container life-cycle management, allowing a transient external dependency failure to inappropriately trigger automated container destruction rather than traffic isolation.",
+      "Hypothesis 3: Inadequate pre-deployment validation and missing CI/CD policy gates allowed a configuration lacking `initialDelaySeconds` and proper probe separation to bypass staging checks, resulting in immediate production failure upon startup."
     ],
-    "latency_seconds": 0.05
+    "latency_seconds": 1.83
   },
   {
     "agent": "root_cause_analyzer",
@@ -113,10 +115,24 @@
     "ranked_results": [
       {
         "rank": 1,
-        "hypothesis": "Incident caused by primary service anomaly during recent configuration or code c",
+        "hypothesis": "Hypothesis 1: Misconfigured Kubernetes liveness probe tied directly to an uninit",
         "score": 1.0,
-        "evidence_strength": "moderate",
-        "supporting_count": 2
+        "evidence_strength": "strong",
+        "supporting_count": 10
+      },
+      {
+        "rank": 2,
+        "hypothesis": "Hypothesis 2: Architectural pattern confusion between liveness and readiness pro",
+        "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 10
+      },
+      {
+        "rank": 3,
+        "hypothesis": "Hypothesis 3: Inadequate pre-deployment validation and missing CI/CD policy gate",
+        "score": 1.0,
+        "evidence_strength": "strong",
+        "supporting_count": 9
       }
     ]
   },
@@ -125,7 +141,7 @@
     "step": "deep_causal_synthesis",
     "root_cause_category": "configuration",
     "confidence": "high",
-    "latency_seconds": 0.05
+    "latency_seconds": 5.11
   },
   {
     "agent": "root_cause_analyzer",
@@ -133,21 +149,21 @@
     "tools_used": [
       "assess_causal_chain"
     ],
-    "chain_valid": false,
-    "overall_confidence": "low",
+    "chain_valid": true,
+    "overall_confidence": "high",
     "issues_found": []
   },
   {
     "agent": "report_writer",
     "step": "report_generation",
-    "model": "gpt-4o",
+    "model": "gemini-3.5-flash-lite",
     "usage": {
-      "prompt_tokens": 100,
-      "completion_tokens": 150,
-      "total_tokens": 250
+      "prompt_tokens": 9209,
+      "completion_tokens": 3877,
+      "total_tokens": 13086
     },
-    "latency_seconds": 0.05,
-    "report_length_chars": 7135
+    "latency_seconds": 11.51,
+    "report_length_chars": 12306
   },
   {
     "agent": "report_writer",
@@ -162,7 +178,7 @@
     "completeness_score": 100,
     "blameless_violations": 0,
     "missing_sections": [],
-    "evidence_citations_found": 24,
+    "evidence_citations_found": 22,
     "has_forensic_diff": true
   },
   {
@@ -171,19 +187,25 @@
     "context_snapshot": {
       "incident_id": "INC-009",
       "incident_title": "Kubernetes Pod Crash Loop From Bad Health Check",
-      "total_findings": 2,
-      "total_timeline_events": 4,
+      "total_findings": 11,
+      "total_timeline_events": 13,
       "total_canonical_events": 21,
       "findings_by_agent": {
-        "log_parser": 1,
-        "root_cause_analyzer": 1
+        "log_parser": 5,
+        "comms_analyzer": 1,
+        "git_analyzer": 1,
+        "root_cause_analyzer": 4
       },
       "findings_by_category": {
-        "error": 1,
-        "root_cause": 1
+        "error": 5,
+        "decision": 1,
+        "deploy": 1,
+        "root_cause": 1,
+        "contributing_factor": 3
       },
       "findings_by_severity": {
-        "warning": 1,
+        "warning": 8,
+        "info": 2,
         "critical": 1
       },
       "agent_summaries": {},
