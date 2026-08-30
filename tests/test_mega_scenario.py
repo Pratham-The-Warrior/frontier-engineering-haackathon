@@ -22,6 +22,7 @@ class TestMegaScenario(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        os.environ["USE_MOCK_LLM"] = "true"
         cls.incident_dir = os.path.join(
             os.path.dirname(__file__), "..", "data", "incidents", "incident_11_mega_payment_outage"
         )

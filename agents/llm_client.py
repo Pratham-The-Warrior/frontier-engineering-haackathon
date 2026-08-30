@@ -16,16 +16,30 @@ from openai import OpenAI
 load_dotenv()
 
 _client: OpenAI | None = None
+_client_provider: str = "mock"
 
 
 def _get_client() -> OpenAI | None:
-    global _client
-    api_key = os.getenv("OPENAI_API_KEY", "")
-    if not api_key or api_key.startswith("sk-your") or api_key == "mock":
+    global _client, _client_provider
+    if os.getenv("USE_MOCK_LLM", "").lower() in ("true", "1", "yes"):
         return None
-    if _client is None:
-        _client = OpenAI(api_key=api_key)
-    return _client
+    openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+    gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
+
+    if openai_key and not openai_key.startswith("sk-your") and openai_key != "mock":
+        if _client is None or _client_provider != "openai":
+            _client = OpenAI(api_key=openai_key)
+            _client_provider = "openai"
+        return _client
+    elif gemini_key and not gemini_key.startswith("your-") and gemini_key != "mock":
+        if _client is None or _client_provider != "gemini":
+            _client = OpenAI(
+                api_key=gemini_key,
+                base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+            )
+            _client_provider = "gemini"
+        return _client
+    return None
 
 
 def _mock_llm_response(system_prompt: str, user_prompt: str, model: str | None, json_mode: bool) -> dict:
@@ -453,6 +467,10 @@ def call_llm(
         return _mock_llm_response(system_prompt, user_prompt, model, json_mode)
 
     model = model or MODEL
+    if _client_provider == "gemini":
+        if model in ("gpt-4o", "gpt-4o-mini", "mock-gpt-4o", "mock-gpt-4o-mini"):
+            gemini_model = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+            model = gemini_model
 
     messages = [
         {"role": "system", "content": system_prompt},
@@ -521,13 +539,29 @@ def call_llm_json(
     try:
         parsed = json.loads(result["content"])
     except json.JSONDecodeError:
-        # Fallback: try to extract JSON from markdown code block
         import re
         match = re.search(r"```(?:json)?\s*([\s\S]*?)```", result["content"])
         if match:
-            parsed = json.loads(match.group(1))
+            try:
+                parsed = json.loads(match.group(1).strip())
+            except Exception:
+                json_match = re.search(r"(\{[\s\S]*\}|\[[\s\S]*\])", match.group(1))
+                if json_match:
+                    try:
+                        parsed = json.loads(json_match.group(1))
+                    except Exception:
+                        parsed = {"raw": result["content"]}
+                else:
+                    parsed = {"raw": result["content"]}
         else:
-            raise ValueError(f"LLM did not return valid JSON: {result['content'][:200]}")
+            json_match = re.search(r"(\{[\s\S]*\}|\[[\s\S]*\])", result["content"])
+            if json_match:
+                try:
+                    parsed = json.loads(json_match.group(1))
+                except Exception:
+                    parsed = {"raw": result["content"]}
+            else:
+                parsed = {"raw": result["content"]}
 
     result["parsed"] = parsed
     return result
