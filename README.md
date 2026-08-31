@@ -13,9 +13,9 @@
   <a href="#-coderabbit-grade-post-mortem-quality"><img src="https://img.shields.io/badge/Blameless%20Score-100%25-8b5cf6.svg?style=for-the-badge" alt="Blameless Score" /></a>
 </p>
 
-> **Turn raw operational chaos into CodeRabbit-grade, executive-ready post-mortems with verified forensic code diffs in under 90 seconds.**
+> **Turn chaotic on-call incident triage into clean, executive-ready post-mortems with verified forensic code diffs in under 90 seconds.**
 
-Prism is an enterprise-grade autonomous multi-agent intelligence platform that ingests high-volume production telemetry (10,000+ application logs, Slack war-room triage threads, Git commits/PR diffs, Jira tickets, and PagerDuty monitoring alerts), normalizes them via the **Universal Canonical Incident Event (UCIE)** standard, correlates them in shared memory through a **Temporal-Causal Incident Knowledge Graph (TCIKG)**, verifies competing hypotheses against empirical evidence tools, and generates scannable, 100% blameless, evidence-cited post-mortems ready for VP review and automated Jira action item ticket creation.
+I built **Prism** to solve one of the biggest bottlenecks in DevOps and SRE workflows: writing thorough, blameless post-mortems after production outages. Instead of losing 4 to 8 hours manually cross-referencing Datadog logs, Slack war rooms, GitHub PRs, PagerDuty alarms, and Jira tickets, Prism coordinates **6 specialized agents** over shared memory. It normalizes fragmented telemetry into canonical events, builds a causal knowledge graph, tests competing root-cause hypotheses against verification tools, and drafts publication-ready post-mortems with syntax-highlighted code diffs and Jira action items.
 
 ---
 
@@ -358,8 +358,8 @@ Follow these simple steps to reproduce all benchmarks, run tests, and launch the
 ### 1. Clone and Setup Environment
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/micro1-hackathon.git
-cd micro1-hackathon
+git clone https://github.com/Pratham-The-Warrior/frontier-engineering-haackathon.git
+cd frontier-engineering-haackathon
 
 # Create and activate virtual environment
 python -m venv venv
@@ -501,3 +501,4 @@ micro1-hackathon/
 3. **Responsible Data & Privacy:** Zero-trust secret scrubbing redacts all credentials, tokens, and PII in memory before ingestion. All incident datasets are synthetic and safe for public benchmarking.
 4. **Open Standards:** Built on open standards (FastAPI, Python 3.11+, Pydantic v2, Lucide Icons, Shields.io badges).
 5. **License:** MIT License. Built for the Micro1 Agentic Workflows Hackathon.
+

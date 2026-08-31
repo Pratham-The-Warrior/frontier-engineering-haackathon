@@ -20,8 +20,8 @@ Step-by-step instructions to reproduce all benchmarks, run tests, and launch the
 
 ### 1. Clone the repository
 ```bash
-git clone <repo-url>
-cd micro1-hackathon
+git clone https://github.com/Pratham-The-Warrior/frontier-engineering-haackathon.git
+cd frontier-engineering-haackathon
 ```
 
 ### 2. Create and activate a virtual environment

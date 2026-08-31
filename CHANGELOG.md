@@ -148,7 +148,7 @@ This changelog tells the story of how the solution evolved from a simple baselin
 
 **Decision:** Kept. This delivers an industry-grade integration and correlation engine capable of handling real-world enterprise infrastructure at scale.
 
----
+## Exploration: Parallel Source Agent Execution
 
 **What we tried:** Running agents 1-3 in parallel using Python's `concurrent.futures.ThreadPoolExecutor`.
 
@@ -172,6 +172,6 @@ This changelog tells the story of how the solution evolved from a simple baselin
 3. **Phase 3 (Agentic Analysis):** Root Cause Analyzer performs hypothesis generation, evidence tool validation (`check_evidence`, `find_corroborating_events`), and hypothesis ranking
 4. **Phase 4 (Output):** Report Writer generates a CodeRabbit-grade post-mortem with executive brief, risk matrix, syntax-highlighted forensic diffs, evidence citations, and automated Jira action tickets
 
-**Final evidence:** See `evaluation/results/comparison_table.md` for the complete baseline vs. agent comparison across all 10 incidents.
+**Final evidence:** See `evaluation/results/comparison_table.md` for the complete baseline vs. agent comparison across all 11 incident scenarios.
 
 **Main contribution:** The combination of cross-source correlation in shared memory and empirical evidence-testing tools eliminates ~40% of hallucinated causal claims while delivering a scannable, developer-friendly forensic diff report.
